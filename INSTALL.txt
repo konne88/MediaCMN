@@ -1,0 +1,19 @@
+MediaCMN Installation
+===============================
+
+Dependencies
+------------
+
+Before installing MediaCMN, you need to install the following libraries:
+ * Mutagen 1.9 or newer
+   http://www.sacredchao.net/quodlibet/wiki/Development/Mutagen
+
+ * FFmpeg
+   http://ffmpeg.mplayerhq.hu/
+
+ * libofa
+   http://www.musicip.com/dns/downloads.jsp
+
+ * mysql
+   http://dev.mysql.com/downloads/mysql/5.0.html#downloads
+
