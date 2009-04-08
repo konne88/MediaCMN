@@ -73,7 +73,7 @@ You can use the following OPTIONs.
 """
 
 
-def copy_file_to_target(db,ft,target,name,minRating,strict,index):
+def copy_file_to_target(db,ft,target,name,minRating,strict,index,useCopy):
 	infos = get_file_infos(ft.tags,minRating)
 	fullname = ft.fullname
 	
@@ -112,14 +112,15 @@ def copy_file_to_target(db,ft,target,name,minRating,strict,index):
 	
 	pathSplit = os.path.split(newFullname)
 	fileSplit = os.path.splitext(pathSplit[1])
-	db.copy_file_from_index(ft.id,pathSplit[0],fileSplit[0],fileSplit[1],index)
+	
+	if useCopy:
+		db.copy_file_from_index(ft.id,pathSplit[0],fileSplit[0],fileSplit[1],index)
 	
 def main(argv):
 	user = "root"
 	pw = ""
 	base="cmn_index"
 	name = "%a/%r/%n-%t"
-	target = ""
 	level = 0.3
 	strict = 0
 	newIndex = ""
@@ -182,7 +183,7 @@ def main(argv):
 	if quit == True:
 		usage()
 		sys.exit(2)
-	
+
 	db = organizerdb.db(newIndex,user,pw)
 		
 	if drop:
@@ -198,7 +199,7 @@ def main(argv):
 		fts = db.get_files_with_tags_from_index(base)
 		for ft in fts:
 			print 'Organizing file "'+unicode(ft.id)+'":'
-			copy_file_to_target(db,ft,target,name,level,strict,base)
+			copy_file_to_target(db,ft,target,name,level,strict,base,newIndex != "")
 		print "----------------------------------------------"
 		
 		print "Organizer done."
