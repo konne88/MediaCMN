@@ -21,13 +21,14 @@ from subprocess import *
 
 from mutagen.mp3 import MP3,InvalidMPEGHeader,HeaderNotFoundError
 from mutagen.asf import ASF,ASFHeaderError
-from tags.tag import Tag
+
+from share.entries import Tag
 
 # mutagen
 # http://code.google.com/p/quodlibet/wiki/Mutagen
 # http://svn.sacredchao.net/svn/quodlibet/trunk/mutagen/TUTORIAL
 
-def get_from_file_metadata(fullname,metaExt):
+def get_from_file(fullname,metaExt):
 	metaExt = metaExt.lower()
 	tags = []
 	

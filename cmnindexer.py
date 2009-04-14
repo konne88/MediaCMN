@@ -21,13 +21,14 @@ import getopt
 import sys
 import os 
 import md5 
+from datetime import datetime
 
 import indexer.filetags as filetags
 import indexer.metatags as metatags
-import indexer.indexdb as indexdb
 import indexer.musicip as musicip
+import share.index as index
+from share.entries import File
 from db.identifiernames import is_valid_identifier_name
-from datetime import datetime
 
 def calc_md5_and_size(fullname):
 	# python strings may include NUL bytes!!!
@@ -40,27 +41,27 @@ def calc_md5_and_size(fullname):
 def parse_file(db,fullname,path,filename):
 	print 'Indexing file "'+filename+'"'
 	print '\tPath:',path
-	t = datetime.now()
-	print '\tTime:',t.strftime("%H:%M:%S")
-	name, extension = os.path.splitext(filename)
+	print '\tTime:',datetime.now().strftime("%H:%M:%S")
 	
-	if db.is_file_added(path,name,extension):
+	name, ext = os.path.splitext(filename)
+	
+	if db.is_file_added(path,name,ext):
 		print "\tAlready added to the database."
 		return
 	
 	# calc the values
 	md5hash, size        = calc_md5_and_size(fullname)
-	fingerprint,puid,tgs,online = musicip.generate_fingerprint_and_lookup_tags_if_online(fullname)
-	tgs.extend(filetags.guess_from_path_and_name(path,name))
-	tgs.extend(metatags.get_from_file_metadata(fullname,extension))
+	fingerprint,puid,tags,online = musicip.generate_fingerprint_and_lookup_tags_if_online(fullname)
+	tags.extend(filetags.guess_from_path_and_name(path,name))
+	tags.extend(metatags.get_from_file(fullname,ext))
 	
 	# add values to db
 	md5id         = db.add_md5(md5hash)
 	puidid        = db.add_puid(puid)
 	fingerprintid = db.add_fingerprint(fingerprint)
-	fileid        = db.add_file(path,name,extension,size,online,md5id,fingerprintid,puidid)
-	db.add_tags(tgs,fileid)
-
+	fileid = db.add_file(File(path,name,ext,size,online,md5id,fingerprintid,puidid))
+	db.add_tags_to_file(tags,fileid)
+	
 	# print values
 	print '\tOnln:',online
 	print '\tSize:',size/1024/1024,"mb"
@@ -69,7 +70,7 @@ def parse_file(db,fullname,path,filename):
 		print '\tPrnt:',fingerprint[:25]+"..."+fingerprint[-25:]
 	if puid!=None:
 		print '\tPUID:',puid
-	print '\tTags:',tgs
+	print '\tTags:',tags
 
 def examen_dir(db,dirname,count):
 	for filename in os.listdir(dirname):
@@ -137,7 +138,7 @@ def main(argv):
 	
 	try:
 		print "----------------------------------------------"
-		db = indexdb.db(base,user,pw)
+		db = index.Index(base,user,pw)
 	
 		if drop:
 			print "Dropping tables"
@@ -155,7 +156,7 @@ def main(argv):
 				source = os.path.abspath(source)
 				if os.path.isfile(source):
 					filename = os.path.split(source)
-					print filename				
+					print filename
 					parse_file(db,source,filename[0],filename[1])
 				else:
 					count = examen_dir(db,source,count)

@@ -21,8 +21,8 @@ import getopt
 import sys
 import os
 
-from tagger.updatetags import get_matching_puid_tags
-import tagger.taggerdb as taggerdb
+from tagger.musicbrainz import get_matching_puid_tags
+import tagger.index as index
 from db.identifiernames import is_valid_identifier_name
 
 def usage():
@@ -50,7 +50,7 @@ You can use the following OPTIONs.
 def main(argv):
 	user = "root"
 	pw = ""
-	index = "cmn_index"
+	indexdb = "cmn_index"
 	target = ""
 	drop = False
 	level = 0.0
@@ -73,8 +73,8 @@ def main(argv):
 		elif opt in ("-h", "--help"):
 			quit = True
 		elif opt in ("-i", "--index"):
-			index = arg.replace('`','``')
-			if not is_valid_identifier_name(index):
+			indexdb = arg.replace('`','``')
+			if not is_valid_identifier_name(indexdb):
 				print "Invalid index name"
 				quit = True
 		elif opt in ("-l","--level"):
@@ -101,19 +101,19 @@ def main(argv):
 		
 		base = ""
 		if target == "":
-			base = index
+			base = indexdb
 		else:
 			base = target
 		
-		db = taggerdb.db(base,user,pw)
+		db = index.TaggerIndex(base,user,pw)
 	
 		if drop:
 			print "Dropping tables"
 			db.drop_tables()
 			print "----------------------------------------------"
 		if target != "":
-			print "Copying files from index `"+index+"` to target `"+base+"`"
-			db.copy_tables_from_index(index)
+			print "Copying files from index `"+indexdb+"` to target `"+base+"`"
+			db.copy_tables_from_index(indexdb)
 			print "----------------------------------------------"
 		
 		print "Caching database entries"

@@ -1,4 +1,4 @@
-# MediaCMN - Tools to create a consistent music library.
+# MediaCMN - Tools to create a consistent music library
 # Copyright (C) 2009 Konstantin Weitz
 #
 # This program is free software; you can redistribute it and/or
@@ -14,3 +14,29 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+class Tag:
+	def __init__(self,value,type,source):
+		self.value = value.strip()
+		self.type = type
+		self.source = source
+
+	def __repr__(self):
+		return str((self.value,self.type,self.source))
+		
+class File:
+	def __init__(self,path,name,ext,size,online,md5id,fingerprintid,puidid):
+		self.path = path
+		self.name = name
+		self.ext = ext
+		self.size = size
+		self.online = online
+		self.md5id = md5id
+		self.fingerprintid =fingerprintid
+		self.puidid = puidid
+		
+class FileIdWithTags:
+	def __init__(self,id,ts):
+		self.id = id
+		self.tags = ts
+

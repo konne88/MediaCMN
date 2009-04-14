@@ -21,7 +21,7 @@ import getopt, sys
 import os
 import shutil
 
-import organizer.organizerdb as organizerdb
+import organizer.index as index
 from organizer.file import get_new_relativename, get_file_infos, create_nonexistant_dirs
 from organizer.mp3file import is_file_mp3, transform_to_mp3, set_file_id3_tags
 from db.identifiernames import is_valid_identifier_name
@@ -72,12 +72,11 @@ You can use the following OPTIONs.
   -u --user        The username to acces the database (default is root)
 """
 
-
 def copy_file_to_target(db,ft,target,name,minRating,strict,index,useCopy):
 	infos = get_file_infos(ft.tags,minRating)
-	fullname = ft.fullname
+	fullname = os.path.join(ft.path,ft.name+ft.ext)
 	
-	print '\t',ft.fullname
+	print '\t',fullname
 	
 	if not os.path.exists(fullname):
 		print "\tFile doesn't exist"
@@ -114,7 +113,7 @@ def copy_file_to_target(db,ft,target,name,minRating,strict,index,useCopy):
 	fileSplit = os.path.splitext(pathSplit[1])
 	
 	if useCopy:
-		db.copy_file_from_index(ft.id,pathSplit[0],fileSplit[0],fileSplit[1],index)
+		db.copy_file_from_index_with_new_filename(ft.id,pathSplit[0],fileSplit[0],fileSplit[1],index)
 	
 def main(argv):
 	user = "root"
@@ -127,6 +126,7 @@ def main(argv):
 	drop = False
 	quit = False
 	
+	opts = []
 	try:
 		opts, unusedOps = getopt.getopt(argv, "df:hi:l:n:p:r:u:", ["drop","filename=","help","index=","level=","new=","password=","restriction=","user="]) 
 		if len(unusedOps) != 1:
@@ -184,7 +184,7 @@ def main(argv):
 		usage()
 		sys.exit(2)
 
-	db = organizerdb.db(newIndex,user,pw)
+	db = index.OrganizerIndex(newIndex,user,pw)
 		
 	if drop:
 		print "Dropping new index tables"
@@ -192,14 +192,15 @@ def main(argv):
 		print "----------------------------------------------"
 	if newIndex != "":
 		print "Creating new index `"+newIndex+"`"
-		db.create_tables(base)
+		db.copy_every_table_except_for_files_from_index(index)
+		db.create_files_table()
 		print "----------------------------------------------"
 	
 	try:
-		fts = db.get_files_with_tags_from_index(base)
+		fts = db.get_all_files_with_tags_from_index(base)
 		for ft in fts:
 			print 'Organizing file "'+unicode(ft.id)+'":'
-			copy_file_to_target(db,ft,target,name,level,strict,base,newIndex != "")
+			copy_file_to_target(db,ft,target,name,level,strict,base,newIndex!="")
 		print "----------------------------------------------"
 		
 		print "Organizer done."

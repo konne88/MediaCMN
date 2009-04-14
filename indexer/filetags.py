@@ -20,7 +20,7 @@
 import re		#regex
 import os.path
 
-from tags.tag import Tag
+from share.entries import Tag
 
 # each tag consists of a type and a value and a source
 # if no type is specified None is used

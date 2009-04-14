@@ -20,7 +20,7 @@
 import getopt, sys
 import os
 
-import filter.filterdb as filterdb
+import filter.index as index
 from db.identifiernames import is_valid_identifier_name
 
 def usage():
@@ -55,7 +55,7 @@ def main(argv):
 	filter = ""
 	user = "root"
 	pw = ""
-	index = "cmn_index"
+	indexdb = "cmn_index"
 	target = ""
 	drop = False
 	level = 0.0
@@ -80,8 +80,8 @@ def main(argv):
 		elif opt in ("-h", "--help"):
 			quit = True
 		elif opt in ("-i", "--index"):
-			index = arg.replace('`','``')
-			if not is_valid_identifier_name(index):
+			indexdb = arg.replace('`','``')
+			if not is_valid_identifier_name(indexdb):
 				print "Invalid index name"
 				quit = True
 		elif opt in ("-l","--level"):
@@ -108,19 +108,19 @@ def main(argv):
 		
 		base = ""
 		if target == "":
-			base = index
+			base = indexdb
 		else:
 			base = target
 		
-		db = filterdb.db(base,user,pw)
+		db = index.FilterIndex(base,user,pw)
 	
 		if drop:
 			print "Dropping tables"
 			db.drop_tables()
 			print "----------------------------------------------"
 		if target != "":
-			print "Copying files from index `"+index+"` to target `"+base+"`"
-			db.copy_tables_from_index(index)
+			print "Copying files from index `"+indexdb+"` to target `"+base+"`"
+			db.copy_tables_from_index(indexdb)
 			print "----------------------------------------------"
 		
 		if filter.find('s') != -1:
@@ -146,12 +146,12 @@ def main(argv):
 		if filter.find('c') != -1:
 			print "Removing non existant file entries"
 			x = 0
-			files = db.get_all_files()
+			files = db.get_all_file_index_connections()
 			for f in files:
-				fn = os.path.join(f[1],f[2]+f[3])
+				fn = os.path.join(f.path,f.name+f.ext)
 				if not os.path.exists(fn):
 					print '\t',fn
-					db.remove_file(f[0])
+					db.remove_file(f.id)
 					x+=1
 			print x, "files removed"
 			print "----------------------------------------------"

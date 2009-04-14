@@ -20,7 +20,8 @@ import time
 
 from musicbrainz2.webservice import Query, TrackFilter, WebServiceError
 
-from tags.tag import Tag
+from entries import Tag, FileIdWithTags
+from share.entries.tagcomp import tag_similarity
 
 # how to use musicbrainz2
 # http://musicbrainz.org/doc/PythonMusicBrainz2
@@ -29,7 +30,13 @@ from tags.tag import Tag
 # http://wiki.musicbrainz.org/XMLWebService#Limiting_Connections_to_the_MusicBrainz_Web_Service
 _lastServerCall = 0
 
-def get_puid_tags(puid):
+def _get_puid_tags(puid):
+	""" 
+	this actually returns a list of all songs,
+	with the passed puid, and the tags to each of tis songs
+	it's a list in a list
+	"""
+	
 	global _lastServerCall
 	
 	# wait at least a second
@@ -69,4 +76,30 @@ def get_puid_tags(puid):
 			res.append(ts)
 
 	return res
+
+
+def get_matching_puid_tags(f,matchLevel):
+	fts = f.tags
+	if f.puid != None:
+		ptss = _get_puid_tags(f.puid)
+		bestSim = 0                 # best similarity
+		bestTags = []
+		for pts in ptss:
+			sim = tag_similarity(fts,pts)
+			if sim >= bestSim:
+				bestTags = pts
+				bestSim = sim
+				
+		if bestSim >= matchLevel:
+			if bestTags != []:
+				# at this point we got the best matching tags
+				return FileIdWithTags(f.id,bestTags)
+		
+		print '\tNo appropriate tags found for track on musicbrainz'
+	else:
+		print '\tNo puid exists for file'
+
+	# at this point we couldn't find any tags for the file
+	# we just leave the old tags
+	return FileIdWithTags(f.id,fts)
 

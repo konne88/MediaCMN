@@ -18,7 +18,7 @@
 from subprocess import *
 import xml.dom.minidom as xml
 
-from tags.tag import Tag
+from share.entries import Tag
 
 # xml parser
 # http://docs.python.org/library/xml.dom.minidom.html

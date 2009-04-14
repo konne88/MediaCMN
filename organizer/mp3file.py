@@ -21,6 +21,12 @@ from subprocess import *
 from mutagen.easyid3 import EasyID3
 import mutagen.easyid3 as easyid3 
 
+# mutagen
+# http://code.google.com/p/quodlibet/wiki/Mutagen
+# http://svn.sacredchao.net/svn/quodlibet/trunk/mutagen/TUTORIAL
+# popen
+# http://docs.python.org/library/subprocess.html#subprocess.PIPE
+
 def is_file_mp3(fullname):
 	argv = [u"file",fullname]
 	# the file cmd prints the filename and adds the filetype after a ':'

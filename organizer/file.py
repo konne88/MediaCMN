@@ -18,56 +18,9 @@
 import os.path
 import os
 import shutil
-from subprocess import *
 
-from tags.tag import Tag
-from tags.tagcomp import find_best_tag_of_type
-
-# mutagen
-# http://code.google.com/p/quodlibet/wiki/Mutagen
-# http://svn.sacredchao.net/svn/quodlibet/trunk/mutagen/TUTORIAL
-# popen
-# http://docs.python.org/library/subprocess.html#subprocess.PIPE
-
-class OrganizerFile:
-	def __init__(self,id,fullname,tags):
-		self.id = id
-		self.fullname = fullname
-		self.tags = tags
-		
-def _create_file(res,i,fs):
-	id   = res[i][0]
-	path = res[i][1]
-	name = res[i][2]
-	ext  = res[i][3]
-	fullname = os.path.join(path,name+ext)
-	
-	ts = []
-	while True:
-		i = _create_tag(res,i,ts)
-		if len(res) == i or id!=res[i][0]:
-			break
-	
-	fs.append( OrganizerFile(id,fullname,ts) )
-	return i
-
-def _create_tag(res,i,ts):
-	value = res[i][4]
-	type = res[i][5]
-	source = res[i][6]
-	
-	if value != None:
-		ts.append( Tag(value,type,source) )
-	
-	return i+1
-
-def create_files_from_flat_list(res):
-	fs = []
-	i = 0
-	while i<len(res):
-		i = _create_file(res,i,fs)
-	
-	return fs
+from entries import Tag
+from share.entries.tagcomp import find_best_tag_of_type
 
 def get_file_infos(tags,minRating):
 	# parse the tags
@@ -167,12 +120,12 @@ def get_new_relativename(target,name,infos,strict):
 			p = p[0:220]
 	relativename = '/'.join(pathParts)
 	
-	# check if file exists and if so, rename
+	# check if file exists and if so ...
 	ext = ".mp3"
 	
-	# don't do anything, if duplicate files should be skiped
+	# ... don't do anything, if duplicate files should be skiped
 		
-	# to use if duplicate files should be renamed
+	# ... to use if duplicate files should be renamed
 	#x = 1
 	#while True:
 	#	if os.path.exists(os.path.join(target,relativename+ext)):

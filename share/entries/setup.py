@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # MediaCMN - Tools to create a consistent music library.
 # Copyright (C) 2009 Konstantin Weitz
 #
@@ -14,3 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+from distutils.core import setup, Extension
+
+ext_modules = [
+    Extension('astrcmp', sources=['astrcmp.cpp']),
+]
+
+module1 = Extension('astrcmp',sources = ['astrcmp.c'])
+
+setup (name = 'cmnFilter', version = '1.0',description = 'This is the filter ability for mediacmn',ext_modules = ext_modules)

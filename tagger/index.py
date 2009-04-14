@@ -15,16 +15,48 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import MySQLdb
+from share.index import Index
+from entries import Tag, FilePuidWithTags
 
-from tags.tag import Tag
-from updatetags import create_files_from_flat_list
-
-class db:
+class TaggerIndex(Index):
 	def __init__(self,dbname,user,pw):
-		self._db     = MySQLdb.connect(passwd=pw,user=user,db=dbname,use_unicode = True,charset='utf8')
-		self._cursor = self._db.cursor()
+		super(TaggerIndex,self).__init__(dbname,user,pw)
 
+	@staticmethod				
+	def _create_file(res,i,fs):
+		id = res[i][0]
+		puid = res[i][1]
+	
+		ts = []
+	
+		while True:
+			i = TaggerIndex._create_tag(res,i,ts)
+			if len(res) == i or res[i][0] != id:
+				break
+			
+		fs.append( FilePuidWithTags(id,puid,ts) )
+		return i
+
+	@staticmethod
+	def _create_tag(res,i,ts):
+		value = res[i][2]
+		type = res[i][3]
+		rating = res[i][4]
+	
+		if value != None:
+			ts.append( Tag(value,type,rating) )
+	
+		return i+1
+
+	@staticmethod
+	def _create_files_from_flat_list(res):
+		fs = []
+		i = 0
+		while i<len(res):
+			i = TaggerIndex._create_file(res,i,fs)
+	
+		return fs
+	
 	def get_files_with_tags_and_puid(self):
 		self._cursor.execute(u"""
 			SELECT 
@@ -49,7 +81,7 @@ class db:
 
 		res = self._cursor.fetchall()
 		
-		fs = create_files_from_flat_list(res)
+		fs = TaggerIndex._create_files_from_flat_list(res)
 		return fs
 
 	def update_all_tags(self,tfs):
@@ -77,58 +109,4 @@ class db:
 		q = q[0:-1]+u";"
 		
 		self._cursor.execute(q,vals)
-
-	def _copy_hash_table(self,index,name):
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS 
-				"""+name+u""" (
-					PRIMARY KEY(id),
-					UNIQUE(value)
-				)
-			SELECT 
-				* 
-			FROM 
-				`"""+index+u"""`."""+name+u""";
-		""")
-
-	def copy_tables_from_index(self,index):
-		self._copy_hash_table(index,u"md5s")
-		self._copy_hash_table(index,u"fingerprints")
-		self._copy_hash_table(index,u"puids")
-		
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS 
-				files (
-					PRIMARY KEY(id),
-					FOREIGN KEY (md5) REFERENCES md5s.id,
-					FOREIGN KEY (fingerprint) REFERENCES fingerprints.id,
-					FOREIGN KEY (puid) REFERENCES puids.id
-				)
-			SELECT
-				*
-			FROM 
-				`"""+index+u"""`.files;
-		""")
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS 
-				tags (
-					id SERIAL, PRIMARY KEY(id),
-					FOREIGN KEY(file) REFERENCES files.id
-				)
-			SELECT
-				*
-			FROM
-				`"""+index+u"""`.tags
-		""")
-
-	def drop_tables(self):
-		self._cursor.execute(u"""
-			DROP TABLE IF EXISTS 
-				files,
-				md5s,
-				fingerprints,
-				puids,
-				tags
-			;
-		""")
 

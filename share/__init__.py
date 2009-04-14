@@ -14,8 +14,3 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
-# description of what is valid
-# http://dev.mysql.com/doc/refman/5.0/en/identifiers.html
-def is_valid_identifier_name(name):
-	return name.find('/')==-1 and name.find('\\')==-1 and name.find('.')==-1 and len(name) <= 64
