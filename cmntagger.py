@@ -17,112 +17,37 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import getopt
 import sys
 import os
 
 from tagger.musicbrainz import get_matching_puid_tags
 import tagger.index as index
-from db.identifiernames import is_valid_identifier_name
+import tagger.options as options
 
-def usage():
-	print """
-Usage: tagger [OPTIONS]
-
-You can use the following OPTIONs.
-  -c --copy        Copies all tables from the index to the copy target
-                   Which is then used as the index. 
-                   If this options is used the index will not be altered
-                   Use with -d to remove entries from the target index first
-  -d --drop        Drops all entries from the copy target before copies are made
-                   Only to use with the copy parameter
-  -h --help        Shows the help (what you currently see)
-  -i --index       The index used. If copy is used it is used as source index only 
-                   And is not modified afterwards
-                   (default is cmn_index)
-  -l --level       The found tags are only assigned to a file, if the similarity to
-                   the original tags is of a heighter level then the pass one. 
-                   (default is 0 which is the lowest)
-  -p --password    The password needed to acces the database
-  -u --user        The username to acces the database (default is root)
-"""
-
-def main(argv):
-	user = "root"
-	pw = ""
-	indexdb = "cmn_index"
-	target = ""
-	drop = False
-	level = 0.0
-	quit = False
-	
-	try:
-		opts, sources = getopt.getopt(argv, "c:dhi:-l:p:u:", ["copy=","drop","help","index=","level=","password=","user="]) 
-	except getopt.GetoptError, e:
-		print str(e)
-		quit = True
-
-	for opt, arg in opts:
-		if opt in ("-c", "--copy"):
-			target = arg.replace('`','``')
-			if not is_valid_identifier_name(target):
-				print "Invalid target name"
-				quit = True
-		elif opt in ("-d", "--drop"):
-			drop = True
-		elif opt in ("-h", "--help"):
-			quit = True
-		elif opt in ("-i", "--index"):
-			indexdb = arg.replace('`','``')
-			if not is_valid_identifier_name(indexdb):
-				print "Invalid index name"
-				quit = True
-		elif opt in ("-l","--level"):
-			try:
-				level = float(arg)
-			except:
-				print "Passed level param is not a float."
-				quit = True
-		elif opt in ("-p", "--password"):
-			pw = arg
-		elif opt in ("-u", "--user"):
-			user = arg
-	
-	if target == "" and drop == True:
-		print "Option drop can't be used without the copy option."
-		quit = True
-			
-	if quit == True:
-		usage()
-		sys.exit(2)
-		
+def main(opts):
 	try:
 		print "----------------------------------------------"
-		
-		base = ""
-		if target == "":
-			base = indexdb
+
+		db = None
+		if opts.targetIndex == None:
+			db = index.TaggerIndex(opts.index,opts.user,opts.pw)
 		else:
-			base = target
-		
-		db = index.TaggerIndex(base,user,pw)
-	
-		if drop:
-			print "Dropping tables"
-			db.drop_tables()
+			db = index.TaggerIndex(opts.targetIndex,opts.user,opts.pw)
+			if opts.drop:
+				print "Dropping target tables"
+				db.drop_tables()
+				print "----------------------------------------------"	
+			print "Copying files from index `"+opts.index+"` to target `"+opts.targetIndex+"`"
+			db.copy_tables_from_index(opts.index)
 			print "----------------------------------------------"
-		if target != "":
-			print "Copying files from index `"+indexdb+"` to target `"+base+"`"
-			db.copy_tables_from_index(indexdb)
-			print "----------------------------------------------"
-		
+
 		print "Caching database entries"
 		fs = db.get_files_with_tags_and_puid()
 		newtagfiles = []
 		for f in fs:
 			print 'Searching tags on musicbrainz for file',f.id,'with puid',f.puid
 			print '\tOld Tags:',f.tags
-			fts = get_matching_puid_tags(f,level)
+			fts = get_matching_puid_tags(f,opts.level)
 			print '\tNew Tags:',fts.tags
 			newtagfiles.append( fts )
 			print "----------------------------------------------"
@@ -142,5 +67,7 @@ def main(argv):
 		print "----------------------------------------------"
 
 if __name__ == "__main__":
-	main(sys.argv[1:])
-
+	opts = options.TaggerOptions()
+	opts.parse_cmdline_arguments(sys.argv)
+	main(opts)
+	

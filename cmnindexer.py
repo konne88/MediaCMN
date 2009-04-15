@@ -17,7 +17,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import getopt
 import sys
 import os 
 import md5 
@@ -26,9 +25,9 @@ from datetime import datetime
 import indexer.filetags as filetags
 import indexer.metatags as metatags
 import indexer.musicip as musicip
+import indexer.options as options
 import share.index as index
 from share.entries import File
-from db.identifiernames import is_valid_identifier_name
 
 def calc_md5_and_size(fullname):
 	# python strings may include NUL bytes!!!
@@ -38,7 +37,7 @@ def calc_md5_and_size(fullname):
 	size = len(d)
 	return md5.new(d).hexdigest(), size
 	
-def parse_file(db,fullname,path,filename):
+def parse_file(db,fullname,path,filename,count):
 	print 'Indexing file "'+filename+'"'
 	print '\tPath:',path
 	print '\tTime:',datetime.now().strftime("%H:%M:%S")
@@ -47,8 +46,8 @@ def parse_file(db,fullname,path,filename):
 	
 	if db.is_file_added(path,name,ext):
 		print "\tAlready added to the database."
-		return
-	
+		return count	#count isn't incremented
+		
 	# calc the values
 	md5hash, size        = calc_md5_and_size(fullname)
 	fingerprint,puid,tags,online = musicip.generate_fingerprint_and_lookup_tags_if_online(fullname)
@@ -71,100 +70,47 @@ def parse_file(db,fullname,path,filename):
 	if puid!=None:
 		print '\tPUID:',puid
 	print '\tTags:',tags
+	count+=1
+	print '\tFile:',str(count)
+	print "----------------------------------------------"
+	return count
 
 def examen_dir(db,dirname,count):
 	for filename in os.listdir(dirname):
 		fullname = os.path.join(dirname, filename)
 		if os.path.isfile(fullname):
-			parse_file(db,fullname,dirname,filename)
-			count=count+1
-			print '\tFile:',str(count)
-			print "----------------------------------------------"			
+			count = parse_file(db,fullname,dirname,filename,count)			
 		else:
 			count = examen_dir(db,fullname,count)
 
 	return count
 
-def usage():
-	print """
-Usage: indexer [OPTIONS] SOURCES ...
-
-All files found, recursively, in the SOURCES are added to the database.
-
-You can use the following OPTIONs.
-  -d --drop        Drops all database entries
-  -h --help        Shows the help (what you currently see)
-  -i --index       The mysql database used to store the index (default is cmn_index)
-  -n --new         Creates the tables in the database
-                   Use with -d to remove old entries first
-  -p --password    The password needed to acces the database
-  -u --user        The username to acces the database (default is root)
-"""
-
-def main(argv):
-	drop = False
-	create = False
-	user = "root"
-	pw = ""
-	base="cmn_index"
-	quit = False
-	
-	try:
-		opts, sources = getopt.getopt(argv, "dhi:np:u:", ["drop","help","index=","new","password=","user="]) 
-	except getopt.GetoptError, e:
-		print str(e)
-		quit = True
-
-	for opt, arg in opts:
-		if opt in ("-d", "--drop"):
-			drop = True
-		elif opt in ("-h", "--help"):
-			quit = True
-		elif opt in ("-i", "--index"):
-			base = arg.replace('`','``')
-			if not is_valid_identifier_name(base):
-				print "Invalid index name"
-				quit = True			
-		elif opt in ("-n", "--new"):
-			create = True
-		elif opt in ("-p", "--password"):
-			pw = arg
-		elif opt in ("-u", "--user"):
-			user = arg
-	
-	if quit == True:
-		usage()
-		sys.exit(2)
-	
+def main(opts):
 	try:
 		print "----------------------------------------------"
-		db = index.Index(base,user,pw)
-	
-		if drop:
+		db = index.Index(opts.index,opts.user,opts.pw)
+
+		if opts.drop:
 			print "Dropping tables"
 			db.drop_tables()
 			print "----------------------------------------------"
 			
-		if create:
+		if opts.new:
 			print "Creating tables"
 			db.create_tables()
 			print "----------------------------------------------"
-	
-		if sources != []:
-			count = 0
-			for source in sources:
-				source = os.path.abspath(source)
-				if os.path.isfile(source):
-					filename = os.path.split(source)
-					print filename
-					parse_file(db,source,filename[0],filename[1])
-				else:
-					count = examen_dir(db,source,count)
-			
-			print "Indexer done."
-			print "All files lying in the given directories and subdirectories are indexed."
-			print "----------------------------------------------"
-			
+
+		count = 0
+		for s in opts.sources:
+			if os.path.isfile(s):
+				filename = os.path.split(s)
+				count = parse_file(db,s,filename[0],filename[1],count)
+			else:
+				count = examen_dir(db,s,count)
+		
+		print "Indexer done."
+		print "All files lying in the given directories and subdirectories are indexed."
+		print "----------------------------------------------"
 	except KeyboardInterrupt:
 		print
 		print
@@ -174,5 +120,7 @@ def main(argv):
 		print "----------------------------------------------"
 
 if __name__ == "__main__":
-	main(sys.argv[1:])
-
+	opts = options.IndexerOptions()
+	opts.parse_cmdline_arguments(sys.argv)
+	main(opts)
+	

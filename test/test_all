@@ -1,0 +1,19 @@
+#/bin/sh
+
+echo
+echo " *** RUNNING THE INDEXER *** "
+echo
+./cmnindexer.py -i test_index --drop -np $1 -u root /media/Daten2/development/resources/testing/music_files 
+echo
+echo " *** RUNNING THE FILTER *** "
+echo
+./cmnfilter.py -i test_index -d --password $1 --copy test_filter -l 0.3 --filter smfpc
+echo
+echo " *** RUNNING THE TAGGER *** "
+echo
+./cmntagger.py -i test_filter -p $1 -c test_tagger -l 0.3 --drop
+echo
+echo " *** RUNNING THE ORGANIZER *** "
+echo
+./cmnorganizer.py -i test_tagger --drop -p $1 -f "%t-%r-%a-%n-%d--%%-" -l 0.5 -n test_library -r 1 /media/Daten2/development/resources/testing/music_library
+

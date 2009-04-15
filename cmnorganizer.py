@@ -24,56 +24,10 @@ import shutil
 import organizer.index as index
 from organizer.file import get_new_relativename, get_file_infos, create_nonexistant_dirs
 from organizer.mp3file import is_file_mp3, transform_to_mp3, set_file_id3_tags
-from db.identifiernames import is_valid_identifier_name
+import organizer.options as options
 
-def usage():
-	print """
-Usage: organizer [OPTIONS] TARGET
-
-The library is created in the TARGET directory
-All songs copied into the library are converted to MP3!
-
-You can use the following OPTIONs.
-  -d --drop        Drops all entries from the new index target before copies are made
-                   Only to use with the copy parameter
-  -f --filename    Defines how filenames, for each entry in the index, are created
-                   All occurances of the following %_ char
-                   are replaced by their value
-                   
-                   %t     The track name
-                   %r     The release name
-                   %a     The artist's name
-                   %n     The tracknumber in the release
-                          (if one digit, '0' is prepended)
-                   %d     The duration of the song
-                   %%     Is replaced by a '%' character
-                   
-                   Default is, extension is added automatically
-                   %a/%r/%n-%t
-  -h --help        Shows the help (what you currently see)
-  -i --index       The index used.
-  -l --level       Only tags with a rating highter then the level will be used
-  -n --new         Creates a new index with all the files that were stored on the filesystem.
-                   All files keep the id they had before so you can see which
-                   files were skipped.
-                   Use with -d to remove entries from the new index first
-                   (default is 0.3) 0 is the lowest
-  -p --password    The password needed to acces the database
-  -r --restriction What restrictions exist for valid filenames. Pass
-                   0      If the library is saved on a UNIX filesystem
-                          just like ext3. 
-                          '/' and NUL 
-                          are removed from filenames
-                   1      If the library is saved on a WINDOWS filesystem
-                          just like ntfs,fat32. 
-                          '/' '\\' ':' '*' '?' '"' '<' '>' '|' and NUL
-                          are removed from filenames
-                   (default is 0)
-  -u --user        The username to acces the database (default is root)
-"""
-
-def copy_file_to_target(db,ft,target,name,minRating,strict,index,useCopy):
-	infos = get_file_infos(ft.tags,minRating)
+def copy_file_to_target(db,ft,opts):
+	infos = get_file_infos(ft.tags,opts.level)
 	fullname = os.path.join(ft.path,ft.name+ft.ext)
 	
 	print '\t',fullname
@@ -92,19 +46,19 @@ def copy_file_to_target(db,ft,target,name,minRating,strict,index,useCopy):
 			return
 		fullname = tempname
 	
-	newRelativename = get_new_relativename(target,name,infos,strict)
+	newRelativename = get_new_relativename(opts.target,opts.filepattern,infos,opts.restrictions)
 	
 	if newRelativename == None:
 		print "Generation of a new filename failed"
 		print infos
 		return
 	
-	newFullname = os.path.join(target,newRelativename)
+	newFullname = os.path.join(opts.target,newRelativename)
 	print '\t',newFullname
 	if os.path.exists(newFullname):
 		print "\tFile can't be copied to the destination, it already exists."
 		return
-	create_nonexistant_dirs(target,newRelativename)
+	create_nonexistant_dirs(opts.target,newRelativename)
 	shutil.copyfile(fullname,newFullname)
 	
 	set_file_id3_tags(newFullname,infos)
@@ -112,95 +66,31 @@ def copy_file_to_target(db,ft,target,name,minRating,strict,index,useCopy):
 	pathSplit = os.path.split(newFullname)
 	fileSplit = os.path.splitext(pathSplit[1])
 	
-	if useCopy:
-		db.copy_file_from_index_with_new_filename(ft.id,pathSplit[0],fileSplit[0],fileSplit[1],index)
+	if opts.newIndex != None:
+		db.copy_file_from_index_with_new_fullname(ft.id,pathSplit[0],fileSplit[0],fileSplit[1],opts.index)
 	
-def main(argv):
-	user = "root"
-	pw = ""
-	base="cmn_index"
-	name = "%a/%r/%n-%t"
-	level = 0.3
-	strict = 0
-	newIndex = ""
-	drop = False
-	quit = False
+def main(opts):
+	db = None
 	
-	opts = []
-	try:
-		opts, unusedOps = getopt.getopt(argv, "df:hi:l:n:p:r:u:", ["drop","filename=","help","index=","level=","new=","password=","restriction=","user="]) 
-		if len(unusedOps) != 1:
-			print "You must pass exactly one TARGET for the organizer to create the library in."
-			quit = True
-		else:
-			target = os.path.abspath(unusedOps[0])
-			if not os.path.isdir(target):
-				print "Target is not a directory"
-				quit = True
-			
-	except getopt.GetoptError, e:
-		print str(e)
-		quit = True
-
-	for opt, arg in opts:
-		if opt in ("-d", "--drop"):
-			drop = True
-		elif opt in ("-f", "--filename"):
-			name = arg
-		elif opt in ("-h", "--help"):
-			quit = True
-		elif opt in ("-i", "--index"):
-			base = arg.replace('`','``')
-			if not is_valid_identifier_name(base):
-				print "Invalid index name"
-				quit = True	
-		elif opt in ("-l","--level"):
-			try:
-				level = float(arg)
-			except:
-				print "Passed level param is not a float."
-				quit = True
-		elif opt in ("-n", "--new"):
-			newIndex = arg.replace('`','``')
-			if not is_valid_identifier_name(newIndex):
-				print "Invalid new index name"
-				quit = True	
-		elif opt in ("-u", "--user"):
-			user = arg
-		elif opt in ("-r","--restriction"):
-			try:
-				strict = int(arg)
-			except:
-				print "Passed restriction param is not an integer."
-				quit = True
-		elif opt in ("-p", "--password"):
-			pw = arg
-	
-	if newIndex == "" and drop == True:
-		print "Option drop can't be used without creating a new index."
-		quit=True
-	
-	if quit == True:
-		usage()
-		sys.exit(2)
-
-	db = index.OrganizerIndex(newIndex,user,pw)
-		
-	if drop:
-		print "Dropping new index tables"
-		db.drop_tables()
-		print "----------------------------------------------"
-	if newIndex != "":
-		print "Creating new index `"+newIndex+"`"
-		db.copy_every_table_except_for_files_from_index(index)
+	if opts.newIndex != None:
+		db = index.OrganizerIndex(opts.newIndex,opts.user,opts.pw)
+		if opts.drop:
+			print "Dropping new index tables"
+			db.drop_tables()
+			print "----------------------------------------------"
+		print "Creating new index `"+opts.newIndex+"`"
+		db.copy_every_table_except_for_files_from_index(opts.index)
 		db.create_files_table()
 		print "----------------------------------------------"
-	
+	else:
+		# connect with no database if newIndex is not specified	
+		db = index.OrganizerIndex('',opts.user,opts.pw)
+		
 	try:
-		fts = db.get_all_files_with_tags_from_index(base)
+		fts = db.get_all_files_with_tags_from_index(opts.index)
 		for ft in fts:
 			print 'Organizing file "'+unicode(ft.id)+'":'
-			copy_file_to_target(db,ft,target,name,level,strict,base,newIndex!="")
+			copy_file_to_target(db,ft,opts)
 		print "----------------------------------------------"
 		
 		print "Organizer done."
@@ -214,5 +104,7 @@ def main(argv):
 		print "----------------------------------------------"
 
 if __name__ == "__main__":
-	main(sys.argv[1:])
+	opts = options.OrganizerOptions()
+	opts.parse_cmdline_arguments(sys.argv)
+	main(opts)
 

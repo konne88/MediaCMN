@@ -192,8 +192,7 @@ class Index(object):
 		self.create_fingerprints_table()
 		
 	def _copy_hash_table_from_index(self,index,name):
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS 
+		self._cursor.execute(u"""CREATE TABLE IF NOT EXISTS 
 				"""+name+u""" (
 					id SERIAL, PRIMARY KEY(id),
 					UNIQUE(value)
@@ -203,7 +202,6 @@ class Index(object):
 			FROM 
 				`"""+index+u"""`."""+name+u""";
 		""")
-	
 	
 	def copy_md5s_table_from_index(self,index):
 		self._copy_hash_table_from_index(index,u"md5s")
