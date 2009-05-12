@@ -19,7 +19,7 @@
 
 import sys
 import os 
-import md5 
+import hashlib
 from datetime import datetime
 
 import indexer.filetags as filetags
@@ -35,7 +35,8 @@ def calc_md5_and_size(fullname):
 	f= open(fullname,mode='rb')
 	d = f.read();
 	size = len(d)
-	return md5.new(d).hexdigest(), size
+
+	return hashlib.md5(d).hexdigest(), size
 	
 def parse_file(db,fullname,path,filename,count):
 	print 'Indexing file "'+filename+'"'

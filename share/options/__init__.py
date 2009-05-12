@@ -80,7 +80,7 @@ class IndexOptions(object):
 			print s
 			
 		print
-		print "Report bugs to <>"
+		print "Report bugs to <konnew_dev@gmx.de>"
 	
 	def _handle_unused_args(self,args):
 		return None
@@ -124,31 +124,32 @@ class IndexOptions(object):
 			
 		try:
 			params, args = getopt.getopt(argv, sopts, lopts) 
+
+			for param, arg in params:
+				for o in self._opts:
+					if param in ('--'+o[0],'-'+o[1]):					
+						if o[2] != None:
+							q = self._set_option_value(o[0],arg)
+						else:
+							q = self._set_option_value(o[0],True)
+						
+						if q!=None:
+							quit = q
+						
+						break
+				
+			q = self._handle_unused_args(args)
+			if q!=None:
+				quit = q
+			
+			q = self._all_options_loaded()
+			if q!=None:
+				quit = q
+		
 		except getopt.GetoptError, e:
 			print e
 			quit = 1
-
-		for param, arg in params:
-			for o in self._opts:
-				if param in ('--'+o[0],'-'+o[1]):					
-					if o[2] != None:
-						q = self._set_option_value(o[0],arg)
-					else:
-						q = self._set_option_value(o[0],True)
-					
-					if q!=None:
-						quit = q
-					
-					break
 		
-		q = self._handle_unused_args(args)
-		if q!=None:
-			quit = q
-		
-		q = self._all_options_loaded()
-		if q!=None:
-			quit = q
-								
 		if quit != None:
 			self.usage()
 			exit(quit)

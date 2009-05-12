@@ -17,3 +17,6 @@ Before installing MediaCMN, you need to install the following libraries:
  * mysql
    http://dev.mysql.com/downloads/mysql/5.0.html#downloads
 
+ * python-musicbrainz2
+
+Please read README.txt for more information.

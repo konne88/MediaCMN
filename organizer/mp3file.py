@@ -40,7 +40,7 @@ def transform_to_mp3(fullname,tempname):
 	except OSError:
 		pass # temp file doesn't exist
 
-	argv = [u"ffmpeg",u"-i",fullname,u'-ab','128k',tempname]
+	argv = [u"ffmpeg",u"-i",fullname,u'-ab','256k',tempname]
 	Popen(argv, stdout=PIPE,stderr=PIPE).communicate()
 
 def set_file_id3_tags(fullname,infos):
@@ -64,6 +64,5 @@ def set_file_id3_tags(fullname,infos):
 			meta[mapping[k]] = infos[k]
 		except KeyError:
 			pass
-	
-	meta.save(fullname)
 
+	meta.save(fullname,v1=2)

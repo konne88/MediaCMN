@@ -8,8 +8,20 @@ Find duplicate files,
 Tag the files using musicbrainz,
 Organize the audio files in a filesystem.
 
+If you run into problems
+===============================
+
+Send bugs and help requests to 
+konnew_dev@gmx.de
+
+I'll be very happy to help you, even if you are new to linux. 
+Since the project is still relatively small bugs should be fixed 
+at most a week after they are reported.
+
 Quickstart
 ===============================
+
+Read INSTALL.txt for information on the librarys you need.
 
 Open a terminal.
 Each line starting with '>' means, 'type into commandline'
@@ -17,6 +29,11 @@ Each line starting with '>' means, 'type into commandline'
 Change to the directory of the extracted source.
 
 > cd /where/you/put/it
+
+Copy cmnfingerprinter to /usr/bin/ or /usr/local/bin/
+You need to be root to do so
+
+> sudo cp cmnfingerprinter /usr/local/bin/
 
 Create a mysql database to store the index.
 
