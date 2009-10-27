@@ -37,6 +37,11 @@ def copy_file_to_target(db,ft,opts):
 		return
 	
 	if not is_file_mp3(fullname):
+		return
+		
+		# TODO
+		# Add mp3 conversion
+		
 		print "\tNeeds to be converted to mp3"
 		tempname = u'/tmp/cmn-organizer-'+unicode(os.getpid())+u'.mp3'
 		transform_to_mp3(fullname,tempname)

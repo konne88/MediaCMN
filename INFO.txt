@@ -1,0 +1,10 @@
+Picard is a good tagger, but it's abilities to find duplicate files and create a music library without human interaction are not the best.
+Therefore I wrote a little application for UNIX like systems, released under the GPL that makes it very easy to organizer all of your music files.
+
+It first indexes all of your music files, read tags from the metadata and creates some hashes like music fingerprints.
+The next step is to remove duplicate audio-files from the index by comparing the puids and fingerprints of the files.
+It then tags them similar to picard but without human interaction by looking up the puids on musicbrainz.
+Finally the files can be stored in a directory-structure like /artist/album/track.mp3
+
+You can find the tool here:
+https://sourceforge.net/projects/mediacmn/

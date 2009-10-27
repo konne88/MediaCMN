@@ -5,13 +5,14 @@ Dependencies
 ------------
 
 Before installing MediaCMN, you need to install the following libraries:
- * Mutagen 1.9 or newer
+ * python-mutagen
    http://www.sacredchao.net/quodlibet/wiki/Development/Mutagen
 
- * FFmpeg
+ * ffmpeg
    http://ffmpeg.mplayerhq.hu/
 
- * libofa
+ * libofa0
+   libofa0-dev
    http://www.musicip.com/dns/downloads.jsp
 
  * mysql
@@ -19,4 +20,10 @@ Before installing MediaCMN, you need to install the following libraries:
 
  * python-musicbrainz2
 
+ * libcurl
+   libcurl4-gnutls-dev
+   http://curl.haxx.se/
+ 
+ * expat
+ 
 Please read README.txt for more information.

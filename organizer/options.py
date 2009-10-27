@@ -71,7 +71,7 @@ class OrganizerOptions(IndexOptions):
             "     / \\ : * ? \" < > | and NUL\n"
             "     are removed from filenames",
             self.restrictions))
-            
+
 		self._appargs+="TARGET"
 		self._appdesc=("Organize the files in the index in a library\n"
 			"which is created on the filesystem in the TARGET directory.\n"
