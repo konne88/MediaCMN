@@ -12,7 +12,7 @@ If you run into problems
 ===============================
 
 Send bugs and help requests to 
-konnew_dev@gmx.de
+konnew@gmx.de
 
 I'll be very happy to help you, even if you are new to linux. 
 Since the project is still relatively small bugs should be fixed 

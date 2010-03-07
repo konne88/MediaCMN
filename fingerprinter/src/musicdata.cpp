@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <sys/wait.h>
 
+#include <cstdlib>
 #include <iostream>
 
 using namespace std;

@@ -8,7 +8,7 @@
 -------------------------------------------------------------------*/
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
+#include <string.h>
 #include <map>
 #include <expat.h>
 #include <curl/curl.h>
