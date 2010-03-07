@@ -28,11 +28,10 @@ import mutagen.easyid3 as easyid3
 # http://docs.python.org/library/subprocess.html#subprocess.PIPE
 
 def is_file_mp3(fullname):
-	argv = [u"file",fullname]
-	# the file cmd prints the filename and adds the filetype after a ':'
-	finfo = Popen(argv, stdout=PIPE).communicate()[0].split(':',1)
+	argv = [u"file",u"-b",fullname]
+	finfo = Popen(argv, stdout=PIPE).communicate()[0]
 	
-	return len(finfo) == 2 and finfo[1].find("MP3 encoding") != -1
+	return finfo.find(u"MP3 encoding") != -1
 
 def transform_to_mp3(fullname,tempname):
 	try:
@@ -40,7 +39,7 @@ def transform_to_mp3(fullname,tempname):
 	except OSError:
 		pass # temp file doesn't exist
 
-	argv = [u"ffmpeg",u"-i",fullname,u'-ab','256k',tempname]
+	argv = [u"ffmpeg",u"-i",fullname,u'-ab',u'256k',tempname]
 	Popen(argv, stdout=PIPE,stderr=PIPE).communicate()
 
 def set_file_id3_tags(fullname,infos):

@@ -26,4 +26,6 @@ Before installing MediaCMN, you need to install the following libraries:
  
  * expat
  
+ * python-mysqldb
+
 Please read README.txt for more information.
