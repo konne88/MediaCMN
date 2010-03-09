@@ -25,15 +25,16 @@ class Tag:
 		return str((self.value,self.type,self.source))
 		
 class File:
-	def __init__(self,path,name,ext,size,online,md5id,fingerprintid,puidid):
+	def __init__(self,path,name,ext,size,online,md5id,fingerprintid,puidid,musictype):
 		self.path = path
 		self.name = name
 		self.ext = ext
 		self.size = size
-		self.online = online
+		self.musicIdAvailable = online
 		self.md5id = md5id
 		self.fingerprintid =fingerprintid
 		self.puidid = puidid
+		self.musictype = musictype
 		
 class FileIdWithTags:
 	def __init__(self,id,ts):

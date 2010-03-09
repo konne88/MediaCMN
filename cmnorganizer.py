@@ -23,7 +23,7 @@ import shutil
 
 import organizer.index as index
 from organizer.file import get_new_relativename, get_file_infos, create_nonexistant_dirs
-from organizer.mp3file import is_file_mp3, transform_to_mp3, set_file_id3_tags
+from organizer.mp3file import transform_to_mp3, set_file_id3_tags
 import organizer.options as options
 
 def copy_file_to_target(db,ft,opts):
@@ -36,20 +36,20 @@ def copy_file_to_target(db,ft,opts):
 		print "\tFile doesn't exist"
 		return
 	
-	if not is_file_mp3(fullname):
-		return
+	# if not is_file_mp3(fullname):
+	#	return
 		
 		# TODO
 		# Add mp3 conversion
 		
-		print "\tNeeds to be converted to mp3"
-		tempname = u'/tmp/cmn-organizer-'+unicode(os.getpid())+u'.mp3'
-		transform_to_mp3(fullname,tempname)
-		
-		if not os.path.exists(tempname):
-			print "\tCouldn't be converted to mp3"
-			return
-		fullname = tempname
+	#	print "\tNeeds to be converted to mp3"
+	#	tempname = u'/tmp/cmn-organizer-'+unicode(os.getpid())+u'.mp3'
+	#	transform_to_mp3(fullname,tempname)
+	#	
+	#	if not os.path.exists(tempname):
+	#		print "\tCouldn't be converted to mp3"
+	#		return
+	#	fullname = tempname
 	
 	newRelativename = get_new_relativename(opts.target,opts.filepattern,infos,opts.restrictions)
 	

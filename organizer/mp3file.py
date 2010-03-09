@@ -27,12 +27,6 @@ import mutagen.easyid3 as easyid3
 # popen
 # http://docs.python.org/library/subprocess.html#subprocess.PIPE
 
-def is_file_mp3(fullname):
-	argv = [u"file",u"-b",fullname]
-	finfo = Popen(argv, stdout=PIPE).communicate()[0]
-	
-	return finfo.find(u"MP3 encoding") != -1
-
 def transform_to_mp3(fullname,tempname):
 	try:
 		os.remove(tempname)

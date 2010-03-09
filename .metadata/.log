@@ -11,3 +11,13 @@ Command-line arguments:  -data /home/konne/Desktop/mediacmn -os linux -ws gtk -a
 
 !ENTRY org.eclipse.cdt.core 1 0 2010-03-07 13:11:53.972
 !MESSAGE Indexed 'fingerprinter' (4 sources, 158 headers) in 5.67 sec: 11,995 declarations; 18,971 references; 4 unresolved inclusions; 0 syntax errors; 174 unresolved names (0.56%)
+!SESSION 2010-03-09 01:13:15.542 -----------------------------------------------
+eclipse.buildId=M20090917-0800
+java.version=1.6.0_15
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=linux, ARCH=x86_64, WS=gtk, NL=en_US
+Framework arguments:  -product org.eclipse.epp.package.cpp.product
+Command-line arguments:  -os linux -ws gtk -arch x86_64 -product org.eclipse.epp.package.cpp.product
+
+!ENTRY org.eclipse.core.resources 2 10035 2010-03-09 01:13:19.988
+!MESSAGE The workspace exited with unsaved changes in the previous session; refreshing workspace to recover changes.

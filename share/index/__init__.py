@@ -89,7 +89,6 @@ class Index(object):
 		)
 
 		return self._db.insert_id()
-
 	def add_md5(self,md5):
 		return self._add_hash(md5,u"md5s")
 	
@@ -106,12 +105,12 @@ class Index(object):
 	def add_file(self,f):
 		self._cursor.execute(u"""
 			INSERT INTO files (
-				path,name,extension,size,online,md5,fingerprint,puid
+				path,name,extension,size,musicidcon,md5,fingerprint,puid,musictype
 			) VALUES (
-				%s,%s,%s,%s,%s,%s,%s,%s
+				%s,%s,%s,%s,%s,%s,%s,%s,%s
 			);
 		""",
-			(f.path,f.name,f.ext,f.size,f.online,f.md5id,f.fingerprintid,f.puidid)
+			(f.path,f.name,f.ext,f.size,f.musicIdAvailable,f.md5id,f.fingerprintid,f.puidid,f.musictype)
 		)
 		return self._db.insert_id()
 
@@ -122,8 +121,14 @@ class Index(object):
 				path        VARCHAR(1024) CHARSET 'utf8' BINARY NOT NULL,
 				name        VARCHAR(255) CHARSET 'utf8' BINARY NOT NULL,
 				extension   VARCHAR(8) CHARSET 'utf8' BINARY NOT NULL,
+				
 				size        BIGINT UNSIGNED NOT NULL,
-				online      BOOL,
+				
+				musicidcon  BOOL NOT NULL,
+				musictype   ENUM (
+					'mp3',
+					'other'
+				) CHARSET 'utf8',
 				
 				md5         BIGINT UNSIGNED NOT NULL, FOREIGN KEY (md5) REFERENCES md5s.id,
 				fingerprint BIGINT UNSIGNED, FOREIGN KEY (fingerprint) REFERENCES fingerprints.id,
@@ -179,7 +184,7 @@ class Index(object):
 					'filename',
 					'path',
 					'musicbrainz',
-					'musicip'			
+					'musicip'
 				) CHARSET 'utf8'
 			);
 		""")
@@ -263,7 +268,7 @@ class Index(object):
 	
 		return self._cursor.fetchone() != None
 	
-	def remove_file(self,fileid):	
+	def remove_file(self,fileid):
 		# delete file
 		self._cursor.execute(u"""
 			DELETE FROM 

@@ -46,7 +46,8 @@ def generate_fingerprint_and_lookup_tags_if_online (fullname):
 	fingerprint = None
 	puid = None
 	tags = []
-	online = None
+	online = False
+	playable = False
 
 	if cmnf.returncode == 0:	
 		dom = xml.parseString(o)
@@ -63,13 +64,12 @@ def generate_fingerprint_and_lookup_tags_if_online (fullname):
 				fingerprint = text
 			elif name == "filename":
 				pass
-			elif name == "online":
-				if text == "true":
-					online = True
-				else:
-					online = False
+			elif name == 'online' and text == 'true':
+				online = True
+			elif name == 'playable' and text == 'true':
+				playable = True
 			else:
 				tags.append(Tag(text,name,"musicip"))
 		
-	return fingerprint,puid,tags,online
+	return fingerprint,puid,tags,online,playable
 

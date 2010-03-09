@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 # MediaCMN - Tools to create a consistent music library
 # Copyright (C) 2009 Konstantin Weitz
 #
@@ -21,6 +20,7 @@ import sys
 import os 
 import hashlib
 from datetime import datetime
+from subprocess import *
 
 import indexer.filetags as filetags
 import indexer.metatags as metatags
@@ -37,7 +37,13 @@ def calc_md5_and_size(fullname):
 	size = len(d)
 
 	return hashlib.md5(d).hexdigest(), size
-	
+
+def is_file_mp3(fullname):
+	argv = [u"file",u"-b",fullname]
+	finfo = Popen(argv, stdout=PIPE).communicate()[0]
+
+	return finfo.find(u"MP3 encoding") != -1 or finfo.find(u"MPEG ADTS") != -1
+
 def parse_file(db,fullname,path,filename,count):
 	print 'Indexing file "'+filename+'"'
 	print '\tPath:',path
@@ -51,17 +57,21 @@ def parse_file(db,fullname,path,filename,count):
 		
 	# calc the values
 	md5hash, size        = calc_md5_and_size(fullname)
-	fingerprint,puid,tags,online = musicip.generate_fingerprint_and_lookup_tags_if_online(fullname)
+	fingerprint,puid,tags,online,playable = musicip.generate_fingerprint_and_lookup_tags_if_online(fullname)
 	tags.extend(filetags.guess_from_path_and_name(path,name))
 	tags.extend(metatags.get_from_file(fullname,ext))
 	
-	# add values to db
-	md5id         = db.add_md5(md5hash)
-	puidid        = db.add_puid(puid)
-	fingerprintid = db.add_fingerprint(fingerprint)
-	fileid = db.add_file(File(path,name,ext,size,online,md5id,fingerprintid,puidid))
-	db.add_tags_to_file(tags,fileid)
-	
+	print '\tPlay:',playable
+
+	musictype = None
+	if playable:
+		if is_file_mp3(fullname):
+			musictype = 'mp3'
+		else:
+			musictype = 'other'
+
+	print '\tType:',musictype
+
 	# print values
 	print '\tOnln:',online
 	print '\tSize:',size/1024/1024,"mb"
@@ -71,6 +81,14 @@ def parse_file(db,fullname,path,filename,count):
 	if puid!=None:
 		print '\tPUID:',puid
 	print '\tTags:',tags
+
+	# add values to db
+	md5id         = db.add_md5(md5hash)
+	puidid        = db.add_puid(puid)
+	fingerprintid = db.add_fingerprint(fingerprint)
+	fileid = db.add_file(File(path,name,ext,size,online,md5id,fingerprintid,puidid,musictype))
+	db.add_tags_to_file(tags,fileid)
+	
 	count+=1
 	print '\tFile:',str(count)
 	print "----------------------------------------------"
