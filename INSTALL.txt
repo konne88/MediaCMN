@@ -28,4 +28,6 @@ Before installing MediaCMN, you need to install the following libraries:
  
  * python-mysqldb
 
+ * python-all-dev
+
 Please read README.txt for more information.

@@ -56,7 +56,7 @@ def _get_puid_tags(puid):
 		results = q.getTracks(f)
 	except WebServiceError, e:
 		print e
-		return res
+		return None
 		
 	for result in results:
 		track = result.track
@@ -82,6 +82,9 @@ def get_matching_puid_tags(f,matchLevel):
 	fts = f.tags
 	if f.puid != None:
 		ptss = _get_puid_tags(f.puid)
+		if ptss == None:
+			return None			
+
 		bestSim = 0                 # best similarity
 		bestTags = []
 		for pts in ptss:

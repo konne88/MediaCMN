@@ -21,14 +21,9 @@ import os.path
 class IndexerOptions(IndexOptions):
 	def __init__(self):
 		super(IndexerOptions,self).__init__()
-		self.new = False
 		self.sources = []
-		self._opts.append(('new','n',None,"initializes the database so it can"
-			" be used as index\n" 
-			"should be used along with the -d option\n"
-			"or if this is the first use of the database as an index",
-			self.new))
-		
+
+		self._appname="Indexer"
 		self._appargs+="[SOURCE...]"
 		self._appdesc=("Index all files that are passed as a SOURCE or\n"
 			"lay in a directory that is passed as a SOURCE\n"
@@ -41,11 +36,8 @@ class IndexerOptions(IndexOptions):
 		
 	def _set_option_value(self,opt,val):
 		q = None
-		if opt == 'new':
-		  	self.new = val
-		else:
-			r = super(IndexerOptions,self)._set_option_value(opt,val)
-			if r != None:
-				q = r
+		r = super(IndexerOptions,self)._set_option_value(opt,val)
+		if r != None:
+			q = r
 		return q
 

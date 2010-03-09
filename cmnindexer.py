@@ -106,7 +106,7 @@ def examen_dir(db,dirname,count):
 
 def main(opts):
 	try:
-		print "----------------------------------------------"
+		opts.print_init()
 		db = index.Index(opts.index,opts.user,opts.pw)
 
 		if opts.drop:
@@ -114,10 +114,9 @@ def main(opts):
 			db.drop_tables()
 			print "----------------------------------------------"
 			
-		if opts.new:
-			print "Creating tables"
-			db.create_tables()
-			print "----------------------------------------------"
+		print "Creating tables"
+		db.create_tables()
+		print "----------------------------------------------"
 
 		count = 0
 		for s in opts.sources:
@@ -127,16 +126,10 @@ def main(opts):
 			else:
 				count = examen_dir(db,s,count)
 		
-		print "Indexer done."
-		print "All files lying in the given directories and subdirectories are indexed."
-		print "----------------------------------------------"
+		opts.print_done()
+
 	except KeyboardInterrupt:
-		print
-		print
-		print "----------------------------------------------"
-		print "Indexer terminated."
-		print "You can continue adding files to the index the next time you issue this command."
-		print "----------------------------------------------"
+		opts.print_terminated()
 
 if __name__ == "__main__":
 	opts = options.IndexerOptions()

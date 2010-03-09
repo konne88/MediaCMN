@@ -15,6 +15,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import _mysql_exceptions
+
 from share.index import Index
 from entries import Tag, FilePuidWithTags
 
@@ -110,3 +112,15 @@ class TaggerIndex(Index):
 		
 		self._cursor.execute(q,vals)
 
+	def set_file_musicbrainzcon(self,fileid,val):
+		self._cursor.execute(u'''UPDATE files SET musicbrainzcon = %s 
+					 WHERE id = %s''',(val,fileid))
+
+	def append_to_files_table(self):
+		try:
+			self._cursor.execute(u'''ALTER TABLE files 
+						 ADD musicbrainzcon BOOL NOT NULL;''')
+		except _mysql_exceptions.OperationalError as err:
+			if err[0] != 1060:
+				raise
+			# if 1060 this means that the column was already added

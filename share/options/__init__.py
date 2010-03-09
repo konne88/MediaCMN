@@ -19,14 +19,15 @@ import getopt
 
 import check
 
-class IndexOptions(object):
-	def __init__(self):
+class CommonCmnOptions(object):
+	def __init__(self,name='',desc=''):
 		self.index = 'cmn_index'
 		self.user = 'root'
 		self.pw = ''
-		self.drop = False
-		self._appname = ''
-		self._appdesc = ''
+		self._email = "konnew@gmx.de"
+		self._appname = name
+		self._appdesc = desc
+
 		self._appargs = "[OPTION...]"
 		self._opts = [
 			('help','h',None,"display this help and exit",False),
@@ -36,7 +37,6 @@ class IndexOptions(object):
 			# set default to None, so it isn't shown when used as default
 			('password','p',"PASSWORD","the USERNAME's password",None),
 			('user','u',"USERNAME","the username used to login to mysql",self.user),
-			('drop','d',None,"drop all database entries in INDEX",self.drop)
 		]
 		
 	def usage(self):
@@ -80,7 +80,7 @@ class IndexOptions(object):
 			print s
 			
 		print
-		print "Report bugs to <konnew_dev@gmx.de>"
+		print "Report bugs to <%s>" % self._email
 	
 	def _handle_unused_args(self,args):
 		return None
@@ -103,10 +103,25 @@ class IndexOptions(object):
 			self.pw = val
 		elif opt == 'user':
 			self.user = val
-		elif opt == 'drop':
-			self.drop = val
 		return q
+
+	def print_sep(self):
+		print '----------------------------------------------'		
 		
+	def print_init(self):
+		print 'Starting',self._appname
+		self.print_sep()
+
+	def print_done(self):
+		print self._appname, "done"
+		self.print_sep()
+
+	def print_terminated(self):
+		print
+		self.print_sep()
+		print self._appname, "terminated."
+		self.print_sep()
+
 	def parse_cmdline_arguments(self,argv):
 		self.appname = argv[0]
 		argv = argv[1:]
@@ -154,6 +169,24 @@ class IndexOptions(object):
 			self.usage()
 			exit(quit)
 
+
+class IndexOptions(CommonCmnOptions):
+	def __init__(self):
+		super(IndexOptions,self).__init__()
+		self.drop = False
+		self._opts.append(('drop','d',None,"drop all database entries in INDEX",self.drop))
+	
+	def _set_option_value(self,opt,val):
+		q = None
+
+		if opt == 'drop':
+			self.drop = val
+		else:
+			r = super(IndexOptions,self)._set_option_value(opt,val)
+			if r != None:
+				q = r
+		return q
+		
 class CopyIndexOptions(IndexOptions):
 	def __init__(self):
 		super(CopyIndexOptions,self).__init__()

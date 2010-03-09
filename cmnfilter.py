@@ -25,7 +25,7 @@ import filter.options as options
 
 def main(opts):
 	try:
-		print '----------------------------------------------'
+		opts.print_init()
 		db = None
 		if opts.targetIndex == None:
 			db = index.FilterIndex(opts.index,opts.user,opts.pw)
@@ -84,15 +84,9 @@ def main(opts):
 			db.clean_puids()
 			print "----------------------------------------------"
 
-		print "Filter done"
-		print "----------------------------------------------"
-		
+		opts.print_done()
 	except KeyboardInterrupt:
-		print
-		print
-		print "----------------------------------------------"
-		print "Filter terminated."
-		print "----------------------------------------------"
+		opts.print_terminated()
 
 if __name__ == "__main__":
 	opts = options.FilterOptions()
