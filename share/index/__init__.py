@@ -20,20 +20,376 @@
 # http://www.python.org/dev/peps/pep-0249/
 
 import MySQLdb
+from share.entries import IndexedFile, TagGroup, FileTag
 
 class Index(object):
+	"""Represents the index where all information is stored."""
+
 	def __init__(self,dbname,user,pw):
+		"""Loads an index
+
+		Loads a mysql database using the databasename `dbname` 
+		a user with the needed privileges `user` and that users
+		password `pw
+		"""
 		self._db     = MySQLdb.connect(passwd=pw,user=user,db=dbname,use_unicode = True,charset='utf8')
 		self._cursor = self._db.cursor()
 
-	def add_tag_to_file(self,fileid,value,type,source):
+	def add_file(self,file_):
+		"""Add a file including all it's tags and flags to the index."""
+		qt = u'INSERT INTO files ( path,name,ext'
+		qb = u') VALUES ( %s,%s,%s'	
+		vals = [file_.path,file_.name,file_.ext]
+		for flag,value in file_.flags.iteritems():
+			qt+=u','+flag
+			qb+=u',%s'
+			vals.append(value)
+		q = qt+qb+u");"
+		self._cursor.execute(q,vals)
+		file_.id = self._db.insert_id()
+		self.add_tag_groups(file_.taggroups)
+		return file_.id
+
+	def is_file_added(self,path,name,ext):
+		"""Checks if a file has already been added to the index."""                
 		self._cursor.execute(u"""
+                        SELECT
+                            path,name,ext
+                        FROM
+                                files
+                        WHERE
+                                path = %s AND
+				name = %s AND
+                                ext  = %s;
+                """,
+                        (path,name,ext)
+                )
+                return self._cursor.fetchone() != None
+
+	def add_tag_groups(self,taggroups):
+		"""Uses `add_tag_group` for each element of the passed list."""		
+		for group in taggroups:
+			self.add_tag_group(group)
+		
+	def add_tag_group(self,taggroup):
+		"""Adds the passed group and it's child tags to the index."""
+		self._cursor.execute(u'''
+			INSERT INTO taggroups (
+				fileid,source
+			) VALUES (
+				%s,%s
+			);
+		''',
+			(taggroup.fileid,taggroup.source)
+		)
+		taggroup.id = self._db.insert_id()
+		self.add_tags(taggroup.tags)
+		return taggroup.id
+
+	def add_tags(self,tags):
+		"""Uses `add_tag` for each element of the passed list."""
+		for tag in tags:
+			self.add_tag(tag)
+
+	def add_tag(self,tag):
+		"""Inserts a single tag into the index."""
+		self._cursor.execute(u'''
+			INSERT INTO tags (
+				groupid,value,type
+			) VALUES (
+				%s,%s,%s
+			);
+		''',
+			(tag.groupid,tag.value,tag.type)
+		)
+		tag.id = self._db.insert_id()
+		return tag.id
+
+	def get_file_ids(self):
+		self._cursor.execute(u"""
+			SELECT 
+				id
+			FROM
+				files
+			""")
+		ids = self._cursor.fetchall()
+		simpleids = []
+		for id_ in ids:
+			simpleids.append(id_[0])
+		return simpleids
+
+	def get_file_without_tags(self,fileid,flags):
+		q = u'''
+			SELECT 
+				s.id AS id,
+				s.ext AS path,
+				s.path AS name,
+				s.name AS ext
+		'''
+		for flag in flags:
+			if flag=='puid':
+				q += u',p.value AS puid'
+			elif flag=='md5':
+				q += u',m.value AS md5'
+			elif flag=='fingerprint':
+				q += u',f.value AS fingerprint'
+			else:
+				q += u','+flag
+		q += u'''\nFROM
+				files AS s
+			LEFT JOIN
+				(puids AS p, md5s AS m, fingerprints AS f)
+			ON
+				s.md5id = m.id AND
+				s.puidid = p.id AND
+				s.fingerprintid = f.id
+			WHERE
+				s.id = %s;
+		'''
+		self._cursor.execute(q,fileid)
+		res = self._cursor.fetchall()
+		if res==():
+			return None
+		# now we need to transform the flat db structure
+		# into an object oriented medel
+		file_ = IndexedFile(res[0][0],res[0][1],res[0][2],res[0][3])
+		i = 4
+		for flag in flags:
+			file_.flags[flag] = res[0][i]
+			i=i+1
+		file_.tags = self.get_file_tags(fileid)
+		return file_
+	
+	def get_file_tags(self,fileid):
+		self._cursor.execute(u'''
+			SELECT 
+				g.id AS groupid,
+				g.source AS source,
+				t.id AS tagid,
+				t.value AS value,
+				t.type AS type
+			FROM
+				taggroups AS g, tags AS t
+			WHERE
+				g.fileid = %s AND
+				t.groupid = g.id
+			ORDER BY
+				g.id;
+		''',(fileid,))
+		res = self._cursor.fetchall()
+		if res==None:
+			return None
+		# creates an object oriented view of  
+		# the flat relational view we get out of the database
+		groups = []
+		i = 0
+		while i<len(res):
+			id = res[i][0]
+			group = TagGroup(id,res[i][1],fileid)
+			while i<len(res) and res[i][0] == id:
+				id_ = res[i][2]
+				value = res[i][3]
+				type_ = res[i][4]
+				group.tags.append( FileTag(group.id,value,type,id) )
+				i=i+1
+		return groups
+
+	def get_file(self,fileid,flags):
+		file_ = self.get_file_without_tags(fileid,flags)
+		file_.tags = self.get_file_tags(fileid)
+		return file_
+
+	def _create_files_table(self):
+		self._cursor.execute(u"""
+			CREATE TABLE IF NOT EXISTS files (
+				id          SERIAL, PRIMARY KEY(id),
+				path        VARCHAR(1024) CHARSET 'utf8' BINARY NOT NULL,
+				name        VARCHAR(255) CHARSET 'utf8' BINARY NOT NULL,
+				ext         VARCHAR(8) CHARSET 'utf8' BINARY NOT NULL,
+				
+				size        BIGINT UNSIGNED NOT NULL,
+				
+				musicip_online  BOOL NOT NULL,
+				musictype   ENUM (
+					'mp3',
+					'other'
+				) CHARSET 'utf8',
+				
+				md5id         BIGINT UNSIGNED NOT NULL, FOREIGN KEY (md5id) REFERENCES md5s.id,
+				fingerprintid BIGINT UNSIGNED, FOREIGN KEY (fingerprintid) REFERENCES fingerprints.id,
+				puidid        BIGINT UNSIGNED, FOREIGN KEY (puidid) REFERENCES puids.id
+			);
+		""")
+		
+	def _create_md5s_table(self):
+		self._cursor.execute(u"""
+			CREATE TABLE IF NOT EXISTS md5s (
+				id          SERIAL, PRIMARY KEY(id),
+				value       CHAR(32) CHARSET 'latin1' BINARY UNIQUE NOT NULL
+			);
+		""")
+	
+	def _create_puids_table(self):
+		self._cursor.execute(u"""
+			CREATE TABLE IF NOT EXISTS puids (
+				id          SERIAL, PRIMARY KEY(id),
+				value       CHAR(36) CHARSET 'latin1' BINARY UNIQUE NOT NULL
+			);
+		""") 
+		
+	def _create_fingerprints_table(self):
+		# the len of the value is fixed.
+		# we have to use varchar cause char only
+		# holds data up to 255 Byte
+		self._cursor.execute(u"""
+			CREATE TABLE IF NOT EXISTS fingerprints (
+				id          SERIAL, PRIMARY KEY(id),
+				value       VARCHAR(756) CHARSET 'latin1' BINARY UNIQUE NOT NULL
+			);
+		""") 
+		
+	def _create_taggroups_table(self):
+		# the len of the value is fixed.
+		# we have to use varchar cause char only
+		# holds data up to 255 Byte
+		self._cursor.execute(u"""
+			CREATE TABLE IF NOT EXISTS taggroups (
+				id          SERIAL, PRIMARY KEY(id),
+				source      ENUM (
+					'metadata',
+					'filename',
+					'path',
+					'musicbrainz',
+					'musicip'
+				) CHARSET 'utf8',
+				fileid      BIGINT UNSIGNED NOT NULL, FOREIGN KEY (fileid) REFERENCES files.id
+			);
+		""") 
+		
+	def _create_tags_table(self):
+		self._cursor.execute(u"""
+			CREATE TABLE IF NOT EXISTS tags (
+				id          SERIAL, PRIMARY KEY(id),
+				value       VARCHAR(255) CHARSET 'utf8' NOT NULL,
+				type        ENUM (
+					'artist',
+					'release',
+					'track',
+					'duration',
+					'date',
+					'tracknumber',
+					'genre',
+					'label'
+				) CHARSET 'utf8',
+				groupid        BIGINT UNSIGNED NOT NULL, FOREIGN KEY (groupid) REFERENCES taggroups.id
+			);
+		""")
+
+	def create_tables(self):
+		"""Creates all needed tabels in the index."""
+		self._create_files_table()
+		self._create_taggroups_table()
+		self._create_tags_table()
+		self._create_md5s_table()
+		self._create_puids_table()
+		self._create_fingerprints_table()
+		
+	def _copy_hash_table_from_index(self,index,name):
+		self._cursor.execute(u"""CREATE TABLE IF NOT EXISTS 
+				"""+name+u""" (
+					id SERIAL, PRIMARY KEY(id),
+					UNIQUE(value)
+				)
+			SELECT 
+				* 
+			FROM 
+				`"""+index+u"""`."""+name+u""";
+		""")
+	
+	def _copy_md5s_table_from_index(self,index):
+		self._copy_hash_table_from_index(index,u"md5s")
+		
+	def _copy_fingerprints_table_from_index(self,index):
+		self._copy_hash_table_from_index(index,u"fingerprints")
+		
+	def _copy_puids_table_from_index(self,index):
+		self._copy_hash_table_from_index(index,u"puids")
+	
+	def _copy_files_table_from_index(self,index):
+		self._cursor.execute(u"""
+			CREATE TABLE IF NOT EXISTS 
+				files (
+					id SERIAL, PRIMARY KEY(id),
+					FOREIGN KEY (md5id) REFERENCES md5s.id,
+					FOREIGN KEY (fingerprintid) REFERENCES fingerprints.id,
+					FOREIGN KEY (puidid) REFERENCES puids.id
+				)
+			SELECT
+				*
+			FROM 
+				`"""+index+u"""`.files;
+		""")
+		
+	def _copy_tags_table_from_index(self,index):
+		self._cursor.execute(u"""
+			CREATE TABLE IF NOT EXISTS 
+				taggroups (
+					id SERIAL, PRIMARY KEY(id),
+					FOREIGN KEY(fileid) REFERENCES files.id
+				)
+			SELECT
+				*
+			FROM
+				`"""+index+u"""`.taggroups
+		""")
+
+	def _copy_tags_table_from_index(self,index):
+		self._cursor.execute(u"""
+			CREATE TABLE IF NOT EXISTS 
+				tags (
+					id SERIAL, PRIMARY KEY(id),
+					FOREIGN KEY(groupid) REFERENCES taggroups.id
+				)
+			SELECT
+				*
+			FROM
+				`"""+index+u"""`.tags
+		""")
+
+	def copy_tables_from_index(self,index):
+		"""Copies all tables from `index` to the current index."""
+		self._copy_md5s_table_from_index(index)
+		self._copy_fingerprints_table_from_index(index)
+		self._copy_puids_table_from_index(index)
+		self._copy_files_table_from_index(index)
+		self._copy_taggroups_table_from_index(index)
+		self._copy_tags_table_from_index(index)
+		
+	def drop_tables(self):
+		"""Drops/Deletes all tabels in the index."""
+		self._cursor.execute(u'''
+			DROP TABLE IF EXISTS 
+				files,
+				md5s,
+				fingerprints,
+				puids,
+				taggroups,
+				tags
+			;
+		''')
+
+
+
+	#### OBSOLETE ####
+
+	def add_tag_to_file(self,tag):
+		self._cursor.execute(u'''
 			INSERT INTO tags (
 				file,value,type,source
 			) VALUES (
 				%s,%s,%s,%s
 			);
-		""",
+		''',
 			(fileid,value,type,source)
 		)
 	
@@ -89,6 +445,7 @@ class Index(object):
 		)
 
 		return self._db.insert_id()
+
 	def add_md5(self,md5):
 		return self._add_hash(md5,u"md5s")
 	
@@ -102,191 +459,3 @@ class Index(object):
 			return None
 		return self._add_hash(fingerprint,u"fingerprints")
 			
-	def add_file(self,f):
-		self._cursor.execute(u"""
-			INSERT INTO files (
-				path,name,extension,size,musicidcon,md5,fingerprint,puid,musictype
-			) VALUES (
-				%s,%s,%s,%s,%s,%s,%s,%s,%s
-			);
-		""",
-			(f.path,f.name,f.ext,f.size,f.musicIdAvailable,f.md5id,f.fingerprintid,f.puidid,f.musictype)
-		)
-		return self._db.insert_id()
-
-	def create_files_table(self):
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS files (
-				id          SERIAL, PRIMARY KEY(id),
-				path        VARCHAR(1024) CHARSET 'utf8' BINARY NOT NULL,
-				name        VARCHAR(255) CHARSET 'utf8' BINARY NOT NULL,
-				extension   VARCHAR(8) CHARSET 'utf8' BINARY NOT NULL,
-				
-				size        BIGINT UNSIGNED NOT NULL,
-				
-				musicidcon  BOOL NOT NULL,
-				musictype   ENUM (
-					'mp3',
-					'other'
-				) CHARSET 'utf8',
-				
-				md5         BIGINT UNSIGNED NOT NULL, FOREIGN KEY (md5) REFERENCES md5s.id,
-				fingerprint BIGINT UNSIGNED, FOREIGN KEY (fingerprint) REFERENCES fingerprints.id,
-				puid        BIGINT UNSIGNED, FOREIGN KEY (puid) REFERENCES puids.id
-			);
-		""")
-		
-	def create_md5s_table(self):
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS md5s (
-				id          SERIAL, PRIMARY KEY(id),
-				value       CHAR(32) CHARSET 'latin1' BINARY UNIQUE NOT NULL
-			);
-		""")
-	
-	def create_puids_table(self):
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS puids (
-				id          SERIAL, PRIMARY KEY(id),
-				value       CHAR(36) CHARSET 'latin1' BINARY UNIQUE NOT NULL
-			);
-		""") 
-		
-	def create_fingerprints_table(self):
-		# the len of the value is fixed.
-		# we have to use varchar cause char only
-		# holds data up to 255 Byte
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS fingerprints (
-				id          SERIAL, PRIMARY KEY(id),
-				value       VARCHAR(756) CHARSET 'latin1' BINARY UNIQUE NOT NULL
-			);
-		""") 
-		
-	def create_tags_table(self):
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS tags (
-				id          SERIAL, PRIMARY KEY(id),
-				file        BIGINT UNSIGNED NOT NULL, FOREIGN KEY (file) REFERENCES files.id,
-				value       VARCHAR(255) CHARSET 'utf8' NOT NULL,
-				type        ENUM (
-					'artist',
-					'release',
-					'track',
-					'duration',
-					'date',
-					'tracknumber',
-					'genre',
-					'label'
-				) CHARSET 'utf8',
-				source      ENUM (
-					'metadata',
-					'filename',
-					'path',
-					'musicbrainz',
-					'musicip'
-				) CHARSET 'utf8'
-			);
-		""")
-
-	def create_tables(self):
-		self.create_files_table()
-		self.create_tags_table()
-		self.create_md5s_table()
-		self.create_puids_table()
-		self.create_fingerprints_table()
-		
-	def _copy_hash_table_from_index(self,index,name):
-		self._cursor.execute(u"""CREATE TABLE IF NOT EXISTS 
-				"""+name+u""" (
-					id SERIAL, PRIMARY KEY(id),
-					UNIQUE(value)
-				)
-			SELECT 
-				* 
-			FROM 
-				`"""+index+u"""`."""+name+u""";
-		""")
-	
-	def copy_md5s_table_from_index(self,index):
-		self._copy_hash_table_from_index(index,u"md5s")
-		
-	def copy_fingerprints_table_from_index(self,index):
-		self._copy_hash_table_from_index(index,u"fingerprints")
-		
-	def copy_puids_table_from_index(self,index):
-		self._copy_hash_table_from_index(index,u"puids")
-	
-	def copy_files_table_from_index(self,index):
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS 
-				files (
-					id SERIAL, PRIMARY KEY(id),
-					FOREIGN KEY (md5) REFERENCES md5s.id,
-					FOREIGN KEY (fingerprint) REFERENCES fingerprints.id,
-					FOREIGN KEY (puid) REFERENCES puids.id
-				)
-			SELECT
-				*
-			FROM 
-				`"""+index+u"""`.files;
-		""")
-		
-	def copy_tags_table_from_index(self,index):
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS 
-				tags (
-					id SERIAL, PRIMARY KEY(id),
-					FOREIGN KEY(file) REFERENCES files.id
-				)
-			SELECT
-				*
-			FROM
-				`"""+index+u"""`.tags
-		""")
-
-	def copy_tables_from_index(self,index):
-		self.copy_md5s_table_from_index(index)
-		self.copy_fingerprints_table_from_index(index)
-		self.copy_puids_table_from_index(index)
-		self.copy_files_table_from_index(index)
-		self.copy_tags_table_from_index(index)
-	
-	def is_file_added(self,path,name,extension):
-		self._cursor.execute(u"""
-			SELECT 
-				path,name,extension 
-			FROM 
-				files
-			WHERE
-				path      = %s AND
-				name      = %s AND
-				extension = %s;
-		""",
-			(path,name,extension)
-		)
-	
-		return self._cursor.fetchone() != None
-	
-	def remove_file(self,fileid):
-		# delete file
-		self._cursor.execute(u"""
-			DELETE FROM 
-				files  
-			WHERE 
-				id = %s;
-		""",
-			(fileid,)
-		)
-		
-	def drop_tables(self):
-		self._cursor.execute(u"""
-			DROP TABLE IF EXISTS 
-				files,
-				md5s,
-				fingerprints,
-				puids,
-				tags
-			;
-		""")
-

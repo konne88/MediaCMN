@@ -24,6 +24,37 @@ class TaggerIndex(Index):
 	def __init__(self,dbname,user,pw):
 		super(TaggerIndex,self).__init__(dbname,user,pw)
 
+	def set_file_musicbrainz_online(self,fileid,val):
+		self._cursor.execute(u'''UPDATE files SET musicbrainz_online = %s 
+					 WHERE id = %s''',(val,fileid))
+
+	def append_to_files_table(self):
+		try:
+			self._cursor.execute(u'''ALTER TABLE files 
+						 ADD musicbrainz_online BOOL NOT NULL;''')
+		except _mysql_exceptions.OperationalError as err:
+			if err[0] != 1060:
+				raise
+			# if 1060 this means that the column was already added
+
+	def get_file_ids_if_puid_and_not_online(self):
+		self._cursor.execute(u'''
+			SELECT 
+				id
+			FROM
+				files
+			WHERE
+				puidid IS NOT NULL AND
+				NOT musicbrainz_online
+			;''')
+		ids = self._cursor.fetchall()
+		simpleids = []
+		for id_ in ids:
+			simpleids.append(id_[0])
+		return simpleids
+
+	##### obsolete ###########
+
 	@staticmethod				
 	def _create_file(res,i,fs):
 		id = res[i][0]
@@ -60,7 +91,7 @@ class TaggerIndex(Index):
 		return fs
 	
 	def get_files_with_tags_and_puid(self):
-		self._cursor.execute(u"""
+		self._cursor.execute(u'''
 			SELECT 
 				f.id,
 				p.value AS puid,
@@ -72,14 +103,14 @@ class TaggerIndex(Index):
 			LEFT JOIN
 				puids AS p
 			ON
-				f.puid = p.id
+				f.puidid = p.id
 			JOIN
 				tags AS t
 			ON
-				f.id = t.file
+				f.id = t.fileid
 			ORDER BY
 				f.id;
-		""")
+		''')
 
 		res = self._cursor.fetchall()
 		
@@ -111,16 +142,3 @@ class TaggerIndex(Index):
 		q = q[0:-1]+u";"
 		
 		self._cursor.execute(q,vals)
-
-	def set_file_musicbrainzcon(self,fileid,val):
-		self._cursor.execute(u'''UPDATE files SET musicbrainzcon = %s 
-					 WHERE id = %s''',(val,fileid))
-
-	def append_to_files_table(self):
-		try:
-			self._cursor.execute(u'''ALTER TABLE files 
-						 ADD musicbrainzcon BOOL NOT NULL;''')
-		except _mysql_exceptions.OperationalError as err:
-			if err[0] != 1060:
-				raise
-			# if 1060 this means that the column was already added

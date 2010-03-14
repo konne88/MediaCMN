@@ -20,7 +20,7 @@
 import sys
 import os
 
-from tagger.musicbrainz import get_matching_puid_tags
+from tagger.musicbrainz import get_puid_tags
 import tagger.index as index
 import share.options as options
 
@@ -31,26 +31,26 @@ def main(opts):
 		db.append_to_files_table()
 
 		print "Caching database entries"
-		files = db.get_files_with_tags_and_puid()
+		fileids = db.get_file_ids_if_puid_and_not_online()
 
-		newtagfiles = []
-		for f in files:
-			print 'Searching tags on musicbrainz for file',f.id,'with puid',f.puid
-			online = False			
-
-			if f.puid != None:
-				print '\tOld Tags:',f.tags
-				fts = get_matching_puid_tags(f,0.5)
-				if fts != None:
-					online = True
-
-				print '\tNew Tags:',fts.tags
-				newtagfiles.append( fts )
-			print "----------------------------------------------"
-			db.set_file_musicbrainzcon(f.id,online)
+		for fileid in fileids:
+			online = False
+			file_ = db.get_file_without_tags(fileid,('puid',))
+			puid = file_.flags['puid']			
+			print "Searching tags on musicbrainz for file",fileid,'with puid',puid
+			taggroups = get_puid_tags(puid)
+			if taggroups != None:
+				online = True
+				print '\tTags:',taggroups
+				for taggroup in taggroups:					
+					taggroup.fileid = file_.id
+				db.add_tag_groups(taggroups)
+				print "Added new tags to index."
+			else:
+				print "Service not online."
+			db.set_file_musicbrainz_online(fileid,online)
+			opts.print_sep()
 			
-		print "Writing new tags to index"
-		db.update_all_tags(newtagfiles)
 		opts.print_done()
 	except KeyboardInterrupt:
 		opts.print_terminated()

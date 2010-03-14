@@ -17,6 +17,22 @@
 
 from share.entries import *
 
+class Song(object):
+	def __init__(self,id_,copyid,sources):
+		self.id = id_
+		self.copyid = copyid
+		self.sources = sources
+		self.duration = None
+		self.artist = None
+		self.release = None
+		self.track = None
+		self.date = None
+		self.tracknumber = None
+		self.genre = None
+		self.label = None
+		self.musictype = 'other'
+
+
 class FileGroup(object):
 	def __init__(self,value,files):
 		self.value = value

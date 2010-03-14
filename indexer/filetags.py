@@ -20,67 +20,70 @@
 import re		#regex
 import os.path
 
-from share.entries import Tag
+from share.entries import FileTag, TagGroup
 
 # each tag consists of a type and a value and a source
 # if no type is specified None is used
 # source is where we got the tag
 # use the following value for
 def guess_from_path_and_name(path,name):
-	res = []
-		
+	res = [TagGroup(None,'filename',None),TagGroup(None,'path',None)]
+
 	# split with '-' if it exists
 	if name.count('-') > 0:
 		fields = name.split('-')
 		for field in fields:
-			res.append(Tag(field,None,'filename'))
-	
+			res[0].tags.append(FileTag(None,field,None,None))
+
 	# if '-' wasn't a seperator, we check if '_' is seperator
 	# it only is if there are '_' and ' ' combined in the string
 	# cause who would use '_' as ' ' if he uses ' ' too.
 	elif name.count('_') > 0 and name.count(' ') > 0:
 		fields = name.split('_')
 		for field in fields:
-			res.append(Tag(field,None,'filename'))
-	
+			res[0].tags.append(FileTag(None,field,None,None))
+
 	# if there is no seperator, we use the full name as track		
 	else:
-		res.append(Tag(name,'track','filename'))
+		res[0].tags.append(FileTag(None,name,'track',None))
 
 	# we mark all the fields that are a number only as 'number'
 	r = re.compile('^\d{1,2}$')
-	for field in res:
-		if r.sub('',field.value)=='':
-			field.type = 'tracknumber'
+	for tag in res[0].tags:
+		if r.sub('',tag.value)=='':
+			tag.type = 'tracknumber'
 			break
-	
+
 	# now we search for a tracknumber that is most of the times
 	# simply stored, seperated by a ' ' from the trackname
 	# or another field
 	r = re.compile('^\d{1,2}\s')
-	for field in res:
-		e = r.match(field.value)
+	for tag in res[0].tags:
+		e = r.match(tag.value)
 		if e != None:
-			res.append(Tag(e.group(),'tracknumber','filename'))
-			field.value = r.sub('',field.value)
+			res[0].tags.append(FileTag(None,e.group(),'tracknumber',None))
+			tag.value = r.sub('',tag.value)
 			break
 
 	# delete all entries that look like md5 hashes 
 	r = re.compile('^[0-9A-Fa-f]{32}$')
-	if len(res)==1 and r.match(res[0].value) != None:
-		del res[0]
-	
+	i = 0
+	while i < len(res[0].tags):
+		if r.match(res[0].tags[i].value) != None:
+			del res[0].tags[i]
+		else:
+			i = i+1
+
 	# now get tags from the directory name
 	# if there are at least two sub directories, 
 	# the first parent will be the release
 	# and the grandparent will be the artist
-	
 	path, reldir = os.path.split(path)
 	artdir = os.path.basename(path)
 	
-	if reldir != "" and artdir != "":
-		res.append(Tag(reldir,'release','path'))
-		res.append(Tag(artdir,'artist','path'))
+	if reldir != '' and artdir != '':
+		res[1].tags.append(FileTag(None,reldir,'release',None))
+		res[1].tags.append(FileTag(None,artdir,'artist',None))
 	
 	return res
 	

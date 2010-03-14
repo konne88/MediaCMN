@@ -15,6 +15,61 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+class IndexedFile(object):
+	def __init__(self,id,path,name,ext):
+		self.taggroups = []
+		self.id = id
+		self.path = path
+		self.name = name
+		self.ext = ext
+		self.flags = {}
+
+	@property
+    	def id(self):
+        	return self._id
+
+	@id.setter
+	def id(self, value):
+		self._id = value
+		for group in self.taggroups:
+			group.fileid = self._id
+
+class TagGroup(object):
+	def __init__(self,id,source,fileid):
+		self.tags = []
+		self.id = id
+		self.source = source
+		self.fileid = fileid
+		
+	@property
+    	def id(self):
+        	return self._id
+
+	@id.setter
+	def id(self, value):
+		self._id = value
+		for tag in self.tags:
+			tag.groupid = self._id
+
+	def __repr__(self):
+		return self.source+': '+str(self.tags)
+
+class FileTag(object):
+	def __init__(self,id,value,type,groupid):
+		self.id = id
+		self.value = value.strip()
+		self.type = type
+		self.groupid = groupid
+
+	def __repr__(self):
+		return str((self.value,self.type))
+
+
+
+
+
+#### OBSOLETE ####
+
 class Tag:
 	def __init__(self,value,type,source):
 		self.value = value.strip()
@@ -23,7 +78,7 @@ class Tag:
 
 	def __repr__(self):
 		return str((self.value,self.type,self.source))
-		
+
 class File:
 	def __init__(self,path,name,ext,size,online,md5id,fingerprintid,puidid,musictype):
 		self.path = path

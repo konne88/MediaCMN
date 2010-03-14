@@ -18,7 +18,7 @@
 from subprocess import *
 import xml.dom.minidom as xml
 
-from share.entries import Tag
+from share.entries import TagGroup, FileTag
 
 # xml parser
 # http://docs.python.org/library/xml.dom.minidom.html
@@ -45,7 +45,7 @@ def generate_fingerprint_and_lookup_tags_if_online (fullname):
 
 	fingerprint = None
 	puid = None
-	tags = []
+	taggroups = [TagGroup(None,'musicip',None)]
 	online = False
 	playable = False
 
@@ -69,7 +69,7 @@ def generate_fingerprint_and_lookup_tags_if_online (fullname):
 			elif name == 'playable' and text == 'true':
 				playable = True
 			else:
-				tags.append(Tag(text,name,"musicip"))
+				taggroups[0].tags.append(FileTag(None,text,name,None))
 		
-	return fingerprint,puid,tags,online,playable
+	return fingerprint,puid,taggroups,online,playable
 

@@ -21,6 +21,8 @@ from share.index import Index
 from entries import Tag, FileGroup, FileIdWithTags, FileIndexConnection
 from groupfilter import filter_check_groups_using_tags, filter_unchecked
 
+
+
 # how filtering the db works
 #
 # there is a table of all files
@@ -39,6 +41,112 @@ from groupfilter import filter_check_groups_using_tags, filter_unchecked
 class FilterIndex(Index):
 	def __init__(self,dbname,user,pw):
 		super(FilterIndex,self).__init__(dbname,user,pw)
+
+	def drop_tables(self):
+		self._cursor.execute(u'DROP TABLE songs, song_sources;')
+
+	def _create_songs_table(self):
+		self._cursor.execute(u'''
+			CREATE TABLE IF NOT EXISTS songs (
+				id          SERIAL, PRIMARY KEY(id),
+				copyid      BIGINT UNSIGNED NOT NULL, FOREIGN KEY (copyid) REFERENCES files.id,
+				
+				duration    INT UNSIGNED NOT NULL,
+				artist      VARCHAR(255) CHARSET 'utf8',
+				`release`   VARCHAR(255) CHARSET 'utf8',
+				track       VARCHAR(255) CHARSET 'utf8',
+				date        VARCHAR(255) CHARSET 'utf8',
+				tracknumber VARCHAR(255) CHARSET 'utf8',
+				genre       VARCHAR(255) CHARSET 'utf8',
+				label       VARCHAR(255) CHARSET 'utf8',
+
+				musictype   ENUM (
+					'mp3',
+					'other'
+				) CHARSET 'utf8' NOT NULL
+			);
+		''')
+
+	def _create_song_sources_table(self):
+		self._cursor.execute(u'''
+			CREATE TABLE IF NOT EXISTS song_sources (
+				songid      BIGINT UNSIGNED NOT NULL, FOREIGN KEY (songid) REFERENCES songs.id,
+				fileid      BIGINT UNSIGNED NOT NULL, FOREIGN KEY (fileid) REFERENCES files.id
+			);
+		''')
+		return self._db.insert_id()
+		
+	def create_tables(self):
+		self._create_songs_table()
+		self._create_song_sources_table()
+		
+	def add_sources(self,songid,sources):
+		s = []
+		q = ''
+		for source in sources:
+			s.append(songid)
+			s.append(source)
+			q+=u'(%s,%s),'
+		q = q[0:-1]+u";"
+
+		self._cursor.execute(u'''
+			INSERT INTO song_sources (
+				songid,fileid
+			) VALUES '''+q,s)
+
+	def add_songs(self,songs):
+		"""Insert multiple songs into the index."""
+		for s in songs:
+			self.add_song(self,s)		
+		
+	def add_song(self,song):
+		"""Inserts a song into the index."""
+		self._cursor.execute(u'''
+			INSERT INTO songs (
+				copyid,	duration, artist, `release`, track, date, tracknumber, genre, label, musictype
+			) VALUES (
+				%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
+			);
+		''',
+			(song.copyid, song.duration, song.artist,
+			song.release, song.track, song.date, song.tracknumber,
+			song.genre, song.label, song.musictype)
+		)
+		song.id = self._db.insert_id()
+		self.add_sources(song.id,song.sources)
+		return song.id
+	
+	def get_music_file_ids_md5_ordered(self):
+		self._cursor.execute(u'''
+			SELECT 
+				id
+			FROM
+				files
+			WHERE
+				musictype IS NOT NULL
+			ORDER BY
+				md5id;
+			''')
+		ids = self._cursor.fetchall()
+		simpleids = []
+		for id_ in ids:
+			simpleids.append(id_[0])
+		return simpleids
+	
+#class Song(object):
+#	__init__(self):
+#		self.id = id
+#		self.copyid = copyid
+#		self.duration = duration
+#		self.artist = artist
+#		self.release = release
+#		self.track = track
+	#	self.date = date
+	#	self.tracknumber = tracknumber
+	#	self.genre = genre
+	#	self.label = label
+	#	self.musictype = musictype
+	#	self.sources 
 
 	@staticmethod
 	def _create_group(res,i,gs):
