@@ -1,0 +1,26 @@
+#/bin/sh
+
+# This script runs all of the tools of mediacmn with a large mix of option combinations
+# In order to use it create the databases:
+# test_index, test_filter, test_tagger, test_library
+# 
+# The only parameter that needs to be passed to the script is the password that is used
+# in order to acces the MySql database.
+
+echo
+echo " *** RUNNING THE INDEXER *** "
+echo
+./cmnindexer.py -i test_index --drop -p $1 -u root music 
+echo
+echo " *** RUNNING THE TAGGER *** "
+echo
+./cmntagger.py -i test_index -p $1
+echo
+echo " *** RUNNING THE FILTER *** "
+echo
+./cmnfilter.py -i test_index --password $1 -l 0.3 --filter mfp
+echo
+echo " *** RUNNING THE ORGANIZER *** "
+echo
+#./cmnorganizer.py -i test_tagger --drop -p $1 -f "%t-%r-%a-%n-%d--%%-" -l 0.5 -n test_library -r 1 /media/data/development/resources/testing/music_library
+

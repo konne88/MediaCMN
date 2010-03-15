@@ -30,8 +30,8 @@ class TaggerIndex(Index):
 
 	def append_to_files_table(self):
 		try:
-			self._cursor.execute(u'''ALTER TABLE files 
-						 ADD musicbrainz_online BOOL NOT NULL;''')
+			self._cursor.execute(u'''ALTER TABLE files ADD 
+				musicbrainz_online BOOL NOT NULL;''')
 		except _mysql_exceptions.OperationalError as err:
 			if err[0] != 1060:
 				raise

@@ -21,13 +21,13 @@ from share.options import check
 #http://www.rubyrobot.org/article/duplicate-a-mysql-database
 #mysqladmin create DB_name -u DB_user --password=DB_pass mysqldump -u DB_user --password=DB_pass DB_name | mysql -u DB_user --password=DB_pass -h DB_host DB_name
 
-
 class FilterOptions(CopyIndexOptions):
 	def __init__(self):
 		super(FilterOptions,self).__init__()
 		self.filter = ''
 		self.level = 0.0
 		
+		self.name = "Filter"
 		self._opts.append(('level','l',"NUMBER","some filters find duplicate files"
 			" by scanning them for acoustic similarity\n"
 			"that is important because the same track will look different to the computer\n"

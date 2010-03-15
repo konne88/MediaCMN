@@ -43,7 +43,10 @@ class FilterIndex(Index):
 		super(FilterIndex,self).__init__(dbname,user,pw)
 
 	def drop_tables(self):
-		self._cursor.execute(u'DROP TABLE songs, song_sources;')
+		self._cursor.execute(u'''DROP TABLE IF EXISTS 
+			songs, 
+			song_sources;
+		''')
 
 	def _create_songs_table(self):
 		self._cursor.execute(u'''
