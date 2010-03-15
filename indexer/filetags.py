@@ -27,7 +27,7 @@ from share.entries import FileTag, TagGroup
 # source is where we got the tag
 # use the following value for
 def guess_from_path_and_name(path,name):
-	res = [TagGroup(None,'filename',None),TagGroup(None,'path',None)]
+	res = [TagGroup(None,'filename',None),TagGroup(None,'filename',None)]
 
 	# split with '-' if it exists
 	if name.count('-') > 0:

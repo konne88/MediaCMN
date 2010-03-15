@@ -21,23 +21,6 @@ from share.index import Index
 from entries import Tag, FileGroup, FileIdWithTags, FileIndexConnection
 from groupfilter import filter_check_groups_using_tags, filter_unchecked
 
-
-
-# how filtering the db works
-#
-# there is a table of all files
-# tables of hashes 
-# and a table for tags 
-#
-# a filter first uses the function _get_files_with_tags_grouped_by_column 
-# to get the id's of all files grouped by the passed name of the column in the db.
-# each file contains all of it's tags too
-#
-# the list of groups, files and tags is passed to the groupfilter.filter function
-# this function returns a list of all files that need to be deleted
-#
-# this list is passed to the _delete_files_and_move_their_tags function
-
 class FilterIndex(Index):
 	def __init__(self,dbname,user,pw):
 		super(FilterIndex,self).__init__(dbname,user,pw)
@@ -135,7 +118,10 @@ class FilterIndex(Index):
 		for id_ in ids:
 			simpleids.append(id_[0])
 		return simpleids
-	
+
+
+### obsolete ###
+
 #class Song(object):
 #	__init__(self):
 #		self.id = id

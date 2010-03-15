@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # MediaCMN - Tools to create a consistent music library.
 # Copyright (C) 2009 Konstantin Weitz
 #
@@ -15,38 +17,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-class Song(object):
-	def __init__(self,id_,copyid,sources):
-		self.id = id_
-		self.copyid = copyid
-		self.sources = sources
-		self.duration = None
-		self.artist = None
-		self.release = None
-		self.track = None
-		self.date = None
-		self.tracknumber = None
-		self.genre = None
-		self.label = None
-		self.musictype = 'other'
+from distutils.core import setup, Extension
 
+ext_modules = [
+    Extension('astrcmp', sources=['astrcmp.cpp']),
+]
 
-### obsolete ####
+module1 = Extension('astrcmp',sources = ['astrcmp.c'])
 
-class FileGroup(object):
-	def __init__(self,value,files):
-		self.value = value
-		self.files = files
-
-class MergeFiles(object):
-	def __init__(self,stayFileId,oldFileId):
-		self.stayFileId = stayFileId
-		self.oldFileId = oldFileId
-
-class FileIndexConnection(object):
-	def __init__(self,id,path,name,ext):
-		self.id = id
-		self.path = path
-		self.name = name
-		self.ext = ext
-
+setup (name = 'cmnFilter', version = '1.0',description = 'This is the filter ability for mediacmn',ext_modules = ext_modules)
