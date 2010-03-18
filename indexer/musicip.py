@@ -45,7 +45,7 @@ def generate_fingerprint_and_lookup_tags_if_online (fullname):
 
 	fingerprint = None
 	puid = None
-	taggroups = [TagGroup(None,'musicip',None)]
+	taggroups = [TagGroup(None,None)]
 	online = False
 	playable = False
 
@@ -69,7 +69,7 @@ def generate_fingerprint_and_lookup_tags_if_online (fullname):
 			elif name == 'playable' and text == 'true':
 				playable = True
 			else:
-				taggroups[0].tags.append(FileTag(None,text,name,None))
+				taggroups[0].tags.append(FileTag(None,text,name,'musicip',None))
 		
 	return fingerprint,puid,taggroups,online,playable
 

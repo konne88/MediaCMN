@@ -22,7 +22,7 @@ import os
 
 import filter.index as index
 import filter.options as options
-from filter.merging import *
+from filter.merging import merge_by_flag_and_tags, merge_by_md5, MergeFile
 
 def main(opts):
 	try:
@@ -61,17 +61,17 @@ def main(opts):
 				merge_by_flag_and_tags(a,opts.level,'puidid'),
 				"puids")
 		):
-			# don't filter all entries with the flag being None
-			i=0
-			while i<len(mfs):
-				if mfs[i].flags[flag] == None:
-					nullmfs.append(mfs[i])
-					del mfs[i]
-				else:
-					i=i+1
-
-			# do the actual filtering
 			if opts.filter.find(k) != -1:
+				# don't filter all entries with the flag being None
+				i=0
+				while i<len(mfs):
+					print mfs[i].flags
+					if mfs[i].flags[flag] == None:
+						nullmfs.append(mfs[i])
+						del mfs[i]
+					else:
+						i=i+1
+				# do the actual filtering
 				print "Merging files with duplicate %s."%t			
 				mfs = f(mfs)
 				opts.print_sep()

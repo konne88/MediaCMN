@@ -18,8 +18,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 from share.index import Index
-from entries import Tag, FileGroup, FileIdWithTags, FileIndexConnection
-from groupfilter import filter_check_groups_using_tags, filter_unchecked
+from share.entries import FileTag, TagGroup
+#from groupfilter import filter_check_groups_using_tags, filter_unchecked
 
 class FilterIndex(Index):
 	def __init__(self,dbname,user,pw):

@@ -21,7 +21,7 @@
 
 # The problem of grouping songs
 #
-# well the first problem is that you should group the songs, so that it doesn't
+# well the first problem is that you should group the sobngs, so that it doesn't
 # matter a which song you start or somthing like that. So it is very important, 
 # that no song is worth more then another song for a reason that doesn't have to
 # do with the song itsself. Let's assume
@@ -101,10 +101,15 @@
 
 from entries import Song
 
-from tagcomp import tag_similarity
+from tagcomp import tag_group_similarity
 
 class MergeFile(object):
+	"""Object holding all information needed to create a song
+	Is basically a conclumeration of multiple, similar, files.
+	"""
+
 	def __init__(self,file_ = None):
+		"""Constructs the conclumeration and is adding the optional `file_`"""
 		self.taggroups = []
 		self.sourcefiles = []
 		self.flags = {}
@@ -112,11 +117,13 @@ class MergeFile(object):
 			self.add_source(file_)
 
 	def add_source(self,file_):
+		"""Adds a source `file_` to the merge."""
 		self.sourcefiles.append(file_.id)
 		self.taggroups.extend(file_.taggroups)
 		self.flags = file_.flags
 
 	def to_song(self):
+		"""Creates a `Song` out of the data stored in itsself."""
 		song = Song(None,self.sourcefiles[0],self.sourcefiles)
 		song.duration = 1337
 		song.musictype = 'other'
@@ -124,6 +131,7 @@ class MergeFile(object):
 		return song
 
 	def merge_with_mergefile(self,mf):
+		"""Merges this mergefile with another one called `mf`."""
 		if self.flags != mf.flags:
 			print "*********************************************************"
 			print "*********************************************************"
@@ -135,30 +143,9 @@ class MergeFile(object):
 		self.sourcefiles.extend(mf.sourcefiles)
 		self.taggroups.extend(mf.taggroups)
 
-
-def merge_by_md5(mfs):
-	"""
-	Merge all files that have the same md5 hash.
-	`mfs` represents all files that need to be merged.
-	Make sure those files are sorted by their md5 hash!
-	"""
-	if len(mfs)==0:
-		return []
-	else:
-		mergefile = mfs[0]
-		result = [mergefile]
-		md5 = mfs[0].flags['md5id']
-
-		for mf in mfs[1:]:
-			if md5 != mf.flags['md5id']:
-				mergefile = mf
-				result.append(mergefile)
-				md5 = mf.flags['md5id']
-			mergefile.merge_with_mergefile(mf)
-	return result
-
 def find_tagwise_similar_files(mf,mfs,level):
 	"""
+	Merge one mergefile with all other mergefiles sharing a flag.
 	Finds files similar to the passed `mf`.
 	`mfs` is a list of all files that will be compared to the tags of `mf`.
 	If the similarity of the tags is > level, they count as similar.
@@ -166,7 +153,6 @@ def find_tagwise_similar_files(mf,mfs,level):
 	unsimilar files.
 	The similar files will include `mf` for sure
 	"""
-
 	# this algorythm moves all similar entries from the mfs to the similar list
 	similar = [mf]
 	for s in similar:
@@ -180,7 +166,12 @@ def find_tagwise_similar_files(mf,mfs,level):
 				del mfs[i]
 	return similar,mfs
 
-def merge_by_similar_tags(mfs,level):
+def merge_files_by_similar_tags(mfs,level):
+	"""
+	Merge all mergefiles sharing a flag.
+	Creates a list of `MergeFile`s. In this new list all elements
+	of the `MergeFile` list `mfs` were merged.
+	"""
 	result = []
 	while len(mfs)>0:
 		mf = mfs[0]
@@ -191,10 +182,12 @@ def merge_by_similar_tags(mfs,level):
 		result.append(mf)
 	return result
 
-def merge_by_flag_and_tags(mfs,level,flag):
+def merge_files_by_flag_and_tags(mfs,level,flag):
 	"""
+	Merge all mergefiles.
 	Merge all files that have the same `flag` and similar tags.
 	`mfs` represents all files that need to be merged.
+	Returns a new list of mergefiles, holding all possible merges
 	"""
 	if len(mfs)==0:
 		return []
@@ -207,7 +200,7 @@ def merge_by_flag_and_tags(mfs,level,flag):
 		for mf in mfs[1:]:
 			if flagval != mf.flags[flag]:
 				# a group just ended here. Check for similarity				
-				result.extend(merge_by_similar_tags(group,level))
+				result.extend(merge_files_by_similar_tags(group,level))
 				# a new group starts here
 				mergefile = mf
 				group = [mergefile]
@@ -218,4 +211,5 @@ def merge_by_flag_and_tags(mfs,level,flag):
 		# here ends the very last group
 		result.extend(merge_by_similar_tags(group,level))
 	return result
+
 

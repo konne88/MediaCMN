@@ -75,12 +75,12 @@ class Index(object):
 		"""Adds the passed group and it's child tags to the index."""
 		self._cursor.execute(u'''
 			INSERT INTO taggroups (
-				fileid,source
+				fileid
 			) VALUES (
-				%s,%s
+				%s
 			);
 		''',
-			(taggroup.fileid,taggroup.source)
+			(taggroup.fileid)
 		)
 		taggroup.id = self._db.insert_id()
 		self.add_tags(taggroup.tags)
@@ -95,12 +95,12 @@ class Index(object):
 		"""Inserts a single tag into the index."""
 		self._cursor.execute(u'''
 			INSERT INTO tags (
-				groupid,value,type
+				groupid,value,type,source
 			) VALUES (
-				%s,%s,%s
+				%s,%s,%s,%s
 			);
 		''',
-			(tag.groupid,tag.value,tag.type)
+			(tag.groupid,tag.value,tag.type,tag.source)
 		)
 		tag.id = self._db.insert_id()
 		return tag.id
@@ -164,7 +164,7 @@ class Index(object):
 		self._cursor.execute(u'''
 			SELECT 
 				g.id AS groupid,
-				g.source AS source,
+				t.source AS source,
 				t.id AS tagid,
 				t.value AS value,
 				t.type AS type
@@ -184,13 +184,14 @@ class Index(object):
 		groups = []
 		i = 0
 		while i<len(res):
-			id = res[i][0]
-			group = TagGroup(id,res[i][1],fileid)
-			while i<len(res) and res[i][0] == id:
+			groupid = res[i][0]
+			group = TagGroup(groupid,fileid)
+			while i<len(res) and res[i][0] == groupid:
+				source = res[i][1]
 				id_ = res[i][2]
 				value = res[i][3]
 				type_ = res[i][4]
-				group.tags.append( FileTag(group.id,value,type,id) )
+				group.tags.append( FileTag(id_,value,type_,source,groupid) )
 				i=i+1
 		return groups
 
@@ -255,13 +256,6 @@ class Index(object):
 		self._cursor.execute(u"""
 			CREATE TABLE IF NOT EXISTS taggroups (
 				id          SERIAL, PRIMARY KEY(id),
-				source      ENUM (
-					'metadata',
-					'filename',
-					'path',
-					'musicbrainz',
-					'musicip'
-				) CHARSET 'utf8',
 				fileid      BIGINT UNSIGNED NOT NULL, FOREIGN KEY (fileid) REFERENCES files.id
 			);
 		""") 
@@ -281,6 +275,13 @@ class Index(object):
 					'genre',
 					'label'
 				) CHARSET 'utf8',
+				source      ENUM (
+					'metadata',
+					'filename',
+					'path',
+					'musicbrainz',
+					'musicip'
+				) CHARSET 'utf8',
 				groupid        BIGINT UNSIGNED NOT NULL, FOREIGN KEY (groupid) REFERENCES taggroups.id
 			);
 		""")
@@ -293,6 +294,33 @@ class Index(object):
 		self._create_md5s_table()
 		self._create_puids_table()
 		self._create_fingerprints_table()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	#### OBSOLETE ####
 		
 	def _copy_hash_table_from_index(self,index,name):
 		self._cursor.execute(u"""CREATE TABLE IF NOT EXISTS 
@@ -377,10 +405,6 @@ class Index(object):
 				tags
 			;
 		''')
-
-
-
-	#### OBSOLETE ####
 
 	def add_tag_to_file(self,tag):
 		self._cursor.execute(u'''

@@ -94,12 +94,12 @@ def get_from_file(fullname,metaExt):
 	elif metaExt in (".flac",".oggflac",".spx",".oggtheora",".ogg"):
 		pass
 
-	taggroup = TagGroup(None,'metadata',None)
+	taggroup = TagGroup(None,None)
 
 	for t in trans:
 		try:
 			d = unicode(meta[t][0])
-			taggroup.tags.append( FileTag(None,d,trans[t],None) )
+			taggroup.tags.append( FileTag(None,d,trans[t],'metadata',None) )
 		except KeyError:  # this tag doesn't exist in the file
 			pass
 	

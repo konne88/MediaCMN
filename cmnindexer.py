@@ -33,7 +33,7 @@ def calc_md5_and_size(fullname):
 	# python strings may include NUL bytes!!!
 	# http://www.velocityreviews.com/forums/t357410-md5-from-python-different-then-md5-from-command-line.html
 	f= open(fullname,mode='rb')
-	d = f.read();
+	d = f.read()
 	size = len(d)
 
 	return hashlib.md5(d).hexdigest(), size

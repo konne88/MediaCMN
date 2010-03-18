@@ -21,7 +21,6 @@ import time
 from musicbrainz2.webservice import Query, TrackFilter, WebServiceError
 
 from entries import FileTag, TagGroup
-from share.entries.tagcomp import tag_similarity
 
 # how to use musicbrainz2
 # http://musicbrainz.org/doc/PythonMusicBrainz2
@@ -62,12 +61,12 @@ def get_puid_tags(puid):
 		# to the result. this way we don't choose the wrong one		
 		rels = track.releases
 		for release in rels:
-			tg = TagGroup(None,'musicbrainz',None)
-			tg.tags.append( FileTag(None,track.title,'track',None) )
-			tg.tags.append( FileTag(None,artist.name,'artist',None) )
-			tg.tags.append( FileTag(None,unicode(track.duration),'duration',None) )
-			tg.tags.append( FileTag(None,release.title,'release',None) )
-			tg.tags.append( FileTag(None,unicode(release.tracksOffset),'tracknumber',None) )
+			tg = TagGroup(None,None)
+			tg.tags.append( FileTag(None,track.title,'track','musicbrainz',None) )
+			tg.tags.append( FileTag(None,artist.name,'artist','musicbrainz',None) )
+			tg.tags.append( FileTag(None,unicode(track.duration),'duration','musicbrainz',None) )
+			tg.tags.append( FileTag(None,release.title,'release','musicbrainz',None) )
+			tg.tags.append( FileTag(None,unicode(release.tracksOffset),'tracknumber','musicbrainz',None) )
 			res.append(tg)
 
 	return res

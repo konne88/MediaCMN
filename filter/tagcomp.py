@@ -61,8 +61,8 @@ def find_best_tag_of_type(ts,type,minRating):
 	return bestTag
 
 def tag_group_similarity(tgs1,tgs2,exclude_sources):
-	"""Calculates the similarity of two lists of groups of tags.
-	`tgs1` and `tgs2` are those two lists, `exclude_sources` is a list
+	"""Calculates the similarity of the taggroups of two files.
+	`tgs1` and `tgs2` are those groups, `exclude_sources` is a list
 	of sources that will not be used, to calc the similarity
 	"""
 	# How to calculate group similarity
@@ -86,9 +86,9 @@ def tag_group_similarity(tgs1,tgs2,exclude_sources):
 	# EXCEPT FOR WITH DIRECTORY TAGS WHERE THE SAME FILE STRUCTURE WOULD
 	# MAKE ALL OF THEM BE THE SAME.
 	highest = 0
-	for ts1 in tgs1:
+	for ts1 in tg1.tags:
 		if sources_used.find( ts1.source ) == -1:
-			for ts2 in tgs2:
+			for ts2 in tg2.tags:
 				if sources_used.find( ts2.source ) == -1:
 					highest = max( tag_similarity(ts1,ts2),highest )
 	return highest

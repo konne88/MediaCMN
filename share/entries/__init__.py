@@ -35,10 +35,9 @@ class IndexedFile(object):
 			group.fileid = self._id
 
 class TagGroup(object):
-	def __init__(self,id,source,fileid):
+	def __init__(self,id,fileid):
 		self.tags = []
 		self.id = id
-		self.source = source
 		self.fileid = fileid
 		
 	@property
@@ -52,17 +51,26 @@ class TagGroup(object):
 			tag.groupid = self._id
 
 	def __repr__(self):
-		return self.source+': '+str(self.tags)
+		return str(self.tags)
 
 class FileTag(object):
-	def __init__(self,id,value,type,groupid):
+	def __init__(self,id,value,type,source,groupid):
 		self.id = id
+		self.source = source
 		self.value = value.strip()
 		self.type = type
 		self.groupid = groupid
 
 	def __repr__(self):
 		return str((self.value,self.type))
+
+
+
+
+
+
+
+
 
 
 
