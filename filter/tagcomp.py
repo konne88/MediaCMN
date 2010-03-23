@@ -18,6 +18,7 @@
 from astrcmp import astrcmp
 
 # constants to define what kind of tags we prefer
+# mul stands for multiplier
 NONE_NONE_MUL = 1
 TYPE_NONE_MUL = 2
 TYPE_TYPE_MUL = 4
@@ -49,19 +50,27 @@ SOURCE_RATING = {
 	None:0.0
 }
 
-def find_best_tag_of_type(ts,type,minRating):
-	bestRating = minRating
-	bestTag = None
+def find_best_tag_group(tgs,minRating):
+	"""Get the best taggroup in the list of tag groups `tgs`."""
+	# How to find the best group
+	#
+	# First of all it is important, to determine the quality of the source.
+	# Therefore we just check all the sources in the group, rate them 
+	#
+	#
+
+	bestRating = minRating;
+	bestGroup = None
 	for t in ts:
 		if t.type == type:
 			rating = SOURCE_RATING[t.source]
 			if rating >= bestRating:
 				bestRating = rating
 				bestTag = t
-	return bestTag
 
 def tag_group_similarity(tgs1,tgs2,exclude_sources):
-	"""Calculates the similarity of the taggroups of two files.
+	"""
+	Calculates the similarity of the taggroups of two files.
 	`tgs1` and `tgs2` are those groups, `exclude_sources` is a list
 	of sources that will not be used, to calc the similarity
 	"""
@@ -74,7 +83,7 @@ def tag_group_similarity(tgs1,tgs2,exclude_sources):
 	# This algorithm should work pretty well. Groups always represent one
 	# set of tags, where either all of them are true or none of them are.
 	# Since groups may be wrong we just use the best match.
-	#	
+	#
 	# Indeed with millions of tag groups it might be questionable if it is
 	# smart to only pick out the best and discard all the wrong ones, but I
 	# think that with so many tag groups (which is unrealistic) still that
@@ -86,16 +95,23 @@ def tag_group_similarity(tgs1,tgs2,exclude_sources):
 	# EXCEPT FOR WITH DIRECTORY TAGS WHERE THE SAME FILE STRUCTURE WOULD
 	# MAKE ALL OF THEM BE THE SAME.
 	highest = 0
-	for ts1 in tg1.tags:
-		if sources_used.find( ts1.source ) == -1:
-			for ts2 in tg2.tags:
-				if sources_used.find( ts2.source ) == -1:
-					highest = max( tag_similarity(ts1,ts2),highest )
+	for tg1 in tgs1:
+		for tg2 in tgs2:
+			# remove the tags with excluded sources 
+			tgs1=[]
+			tgs2=[]
+			for tg1 in tgs1:
+				if exclude_sources.find( tg1.source ) == -1:
+					tgs1.append(tg1)
+			for tg2 in tgs2:
+				if exclude_sources.find( tg2.source ) == -1:
+					tgs2.append(tg2)
+
+			highest = max( tag_similarity(tgs1,tgs2),highest )
 	return highest
 
 def tag_similarity(tgs1,tgs2):
 	"""Calculates the similarity of two lists of tags."""
-
 	# How to calculate tag similarity
 	#
 	# one compares each the tag from ts1 with all tags from ts2

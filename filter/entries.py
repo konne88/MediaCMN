@@ -31,6 +31,7 @@ class Song(object):
 		self.musictype = 'other'
 
 
+
 ### obsolete ####
 
 class FileGroup(object):

@@ -161,7 +161,7 @@ def find_tagwise_similar_files(mf,mfs,level):
 			# internet since that would manipulate our result.
 			# E.g. all files with identical puids would match 100% since
 			# musicbrainz gives them all exactly the same result
-			if tag_group_similarity(s,mfs[i], ('musicbrainz','musicdns')) > level:
+			if tag_group_similarity(s.taggroups,mfs[i].taggroups, ('musicbrainz','musicdns')) > level:
 				similar.append(mfs[i])
 				del mfs[i]
 	return similar,mfs
@@ -209,7 +209,28 @@ def merge_files_by_flag_and_tags(mfs,level,flag):
 				group.append(mf)
 
 		# here ends the very last group
-		result.extend(merge_by_similar_tags(group,level))
+		result.extend(merge_files_by_similar_tags(group,level))
 	return result
+
+def merge_files_by_md5(mfs):
+        """
+        Merge all files that have the same md5 hash.
+        `mfs` represents all files that need to be merged.
+        Make sure those files are sorted by their md5 hash!
+        """
+        if len(mfs)==0:
+                return []
+        else:
+                mergefile = mfs[0]
+                result = [mergefile]
+                md5 = mfs[0].flags['md5id']
+
+                for mf in mfs[1:]:
+                        if md5 != mf.flags['md5id']:
+                                mergefile = mf
+                                result.append(mergefile)
+                                md5 = mf.flags['md5id']
+                        mergefile.merge_with_mergefile(mf)
+        return result
 
 

@@ -22,7 +22,7 @@ import os
 
 import filter.index as index
 import filter.options as options
-from filter.merging import merge_by_flag_and_tags, merge_by_md5, MergeFile
+from filter.merging import merge_files_by_flag_and_tags, merge_files_by_md5, MergeFile
 
 def main(opts):
 	try:
@@ -53,19 +53,18 @@ def main(opts):
 			)))
 
 		# Apply all the needed filters
-		for k,flag,f,t in (('m','md5id',merge_by_md5,"md5 hashes"),
+		for k,flag,f,t in (('m','md5id',merge_files_by_md5,"md5 hashes"),
                             ('f', 'fingerprintid', lambda a : 
-				merge_by_flag_and_tags(a,opts.level,'fingerprintid'),
+				merge_files_by_flag_and_tags(a,opts.level,'fingerprintid'),
 				"fingerprints"),
 			    ('p', 'puidid', lambda a : 
-				merge_by_flag_and_tags(a,opts.level,'puidid'),
+				merge_files_by_flag_and_tags(a,opts.level,'puidid'),
 				"puids")
 		):
 			if opts.filter.find(k) != -1:
 				# don't filter all entries with the flag being None
 				i=0
 				while i<len(mfs):
-					print mfs[i].flags
 					if mfs[i].flags[flag] == None:
 						nullmfs.append(mfs[i])
 						del mfs[i]
@@ -78,10 +77,18 @@ def main(opts):
 
 		# Merge with the leftout Files again
 		mfs.extend(nullmfs)
-		
-		# Write merged files into the database
+
+		# Create songs and therefore also decide one set of tags
+		songs = []		
 		for mf in mfs:
-			db.add_song(mf.to_song())
+			songs.append(mf.to_song())
+		
+		# Merge files that have the same set of tags
+		
+
+		# Write merged files into the database
+		for s in songs:
+			db.add_song(s)
 
 		opts.print_done()
 	except KeyboardInterrupt:
