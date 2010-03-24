@@ -1,0 +1,5 @@
+# Tells git what files can be ignored when executing add
+*.pyc
+*.o
+*~
+
