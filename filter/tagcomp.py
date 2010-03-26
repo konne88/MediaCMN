@@ -49,24 +49,35 @@ SOURCE_RATING = {
 	'path':0.2,
 	None:0.0
 }
-
 def find_best_tag_group(tgs,minRating):
-	"""Get the best taggroup in the list of tag groups `tgs`."""
+	"""Get the best taggroup in the list of tag groups `=tgs`."""
 	# How to find the best group
 	#
 	# First of all it is important, to determine the quality of the source.
-	# Therefore we just check all the sources in the group, rate them 
-	#
-	#
+	# Therefore we just check all the sources in the group and rate them 
+	# Then we get the average rating per group and pick the best one
 
 	bestRating = minRating;
 	bestGroup = None
-	for t in ts:
-		if t.type == type:
-			rating = SOURCE_RATING[t.source]
-			if rating >= bestRating:
-				bestRating = rating
-				bestTag = t
+	for tg in tgs:
+		if len(tg.tags) == 0:
+			continue
+		rating = 0
+		for t in tg.tags:
+			rating += SOURCE_RATING[t.source]
+		rating = rating / len(tg.tags)
+		
+		print tg
+		if rating >= bestRating:
+			bestRating = rating
+			bestGroup = tg
+
+
+	print
+	print "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+	print
+
+	return bestGroup
 
 def tag_group_similarity(tgs1,tgs2,exclude_sources):
 	"""
@@ -110,7 +121,7 @@ def tag_group_similarity(tgs1,tgs2,exclude_sources):
 			highest = max( tag_similarity(tgs1,tgs2),highest )
 	return highest
 
-def tag_similarity(tgs1,tgs2):
+def tag_similarity(ts1,ts2):
 	"""Calculates the similarity of two lists of tags."""
 	# How to calculate tag similarity
 	#

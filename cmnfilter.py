@@ -22,7 +22,10 @@ import os
 
 import filter.index as index
 import filter.options as options
-from filter.merging import merge_files_by_flag_and_tags, merge_files_by_md5, MergeFile
+from filter.merging import merge_files_by_flag_and_tags, 	\
+                           merge_files_by_md5, 			\
+                           merge_songs_by_properties,		\
+                           MergeFile
 
 def main(opts):
 	try:
@@ -48,10 +51,9 @@ def main(opts):
 		# get all music files from the index
 		fileids = db.get_music_file_ids_md5_ordered()
 		for fileid in fileids:
-			mfs.append(MergeFile(db.get_file(
-				fileid, flags
-			)))
-
+			mf = MergeFile(db.get_file(fileid, flags))
+			mfs.append(mf)
+			
 		# Apply all the needed filters
 		for k,flag,f,t in (('m','md5id',merge_files_by_md5,"md5 hashes"),
                             ('f', 'fingerprintid', lambda a : 
@@ -84,10 +86,11 @@ def main(opts):
 			songs.append(mf.to_song())
 		
 		# Merge files that have the same set of tags
-		
+		#songs = merge_songs_by_properties(songs)
 
 		# Write merged files into the database
 		for s in songs:
+			print s
 			db.add_song(s)
 
 		opts.print_done()

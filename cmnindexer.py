@@ -57,7 +57,7 @@ def parse_file(db,fullname,path,filename,count):
 	
 	# calc the values
 	md5hash, size        = calc_md5_and_size(fullname)
-	fingerprint,puid,taggroups,online,playable = musicip.generate_fingerprint_and_lookup_tags_if_online(fullname)
+	fingerprint,puid,taggroups,online,playable,duration = musicip.generate_fingerprint_and_lookup_tags_if_online(fullname)
 	taggroups.extend(filetags.guess_from_path_and_name(path,name))
 	taggroups.extend(metatags.get_from_file(fullname,ext))
 	musictype = None
@@ -91,6 +91,7 @@ def parse_file(db,fullname,path,filename,count):
 	f.flags['fingerprintid'] = fingerprintid
 	f.flags['musictype'] = musictype
 	f.flags['musicip_online'] = online
+	f.flags['duration'] = duration
 	f.taggroups = taggroups
 	db.add_file(f)
 	

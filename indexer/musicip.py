@@ -48,8 +48,9 @@ def generate_fingerprint_and_lookup_tags_if_online (fullname):
 	taggroups = [TagGroup(None,None)]
 	online = False
 	playable = False
+	duration = 0
 
-	if cmnf.returncode == 0:	
+	if cmnf.returncode == 0:
 		dom = xml.parseString(o)
 	
 		# parse the first file that was returned
@@ -64,12 +65,16 @@ def generate_fingerprint_and_lookup_tags_if_online (fullname):
 				fingerprint = text
 			elif name == "filename":
 				pass
-			elif name == 'online' and text == 'true':
-				online = True
-			elif name == 'playable' and text == 'true':
-				playable = True
+			elif name == 'online': 
+				if text == 'true':
+					online = True
+			elif name == 'playable':
+				if text == 'true':
+					playable = True
+			elif name == 'duration':
+				duration == int(text)
 			else:
 				taggroups[0].tags.append(FileTag(None,text,name,'musicip',None))
 		
-	return fingerprint,puid,taggroups,online,playable
+	return fingerprint,puid,taggroups,online,playable,duration
 

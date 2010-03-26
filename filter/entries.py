@@ -30,6 +30,10 @@ class Song(object):
 		self.label = None
 		self.musictype = 'other'
 
+	def __repr__(self):
+		return str((self.duration,self.artist,self.release,self.track,
+                            self.date,self.tracknumber,self.genre,self.label,
+                            self.musictype))
 
 
 ### obsolete ####

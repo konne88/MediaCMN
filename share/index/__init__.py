@@ -157,10 +157,9 @@ class Index(object):
 		for flag in flags:
 			file_.flags[flag] = res[0][i]
 			i=i+1
-		file_.tags = self.get_file_tags(fileid)
 		return file_
 	
-	def get_file_tags(self,fileid):
+	def get_file_taggroups(self,fileid):
 		self._cursor.execute(u'''
 			SELECT 
 				g.id AS groupid,
@@ -177,6 +176,7 @@ class Index(object):
 				g.id;
 		''',(fileid,))
 		res = self._cursor.fetchall()
+
 		if res==None:
 			return None
 		# creates an object oriented view of  
@@ -193,11 +193,13 @@ class Index(object):
 				type_ = res[i][4]
 				group.tags.append( FileTag(id_,value,type_,source,groupid) )
 				i=i+1
+			groups.append(group)
 		return groups
 
 	def get_file(self,fileid,flags):
 		file_ = self.get_file_without_tags(fileid,flags)
-		file_.tags = self.get_file_tags(fileid)
+		file_.taggroups = self.get_file_taggroups(fileid)
+
 		return file_
 
 	def _create_files_table(self):
@@ -209,7 +211,8 @@ class Index(object):
 				ext         VARCHAR(8) CHARSET 'utf8' BINARY NOT NULL,
 				
 				size        BIGINT UNSIGNED NOT NULL,
-				
+				duration    INT UNSIGNED,
+
 				musicip_online  BOOL NOT NULL,
 				musictype   ENUM (
 					'mp3',
@@ -269,7 +272,6 @@ class Index(object):
 					'artist',
 					'release',
 					'track',
-					'duration',
 					'date',
 					'tracknumber',
 					'genre',

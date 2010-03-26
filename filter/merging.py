@@ -101,7 +101,7 @@
 
 from entries import Song
 
-from tagcomp import tag_group_similarity
+from tagcomp import tag_group_similarity,find_best_tag_group
 
 class MergeFile(object):
 	"""Object holding all information needed to create a song
@@ -128,6 +128,29 @@ class MergeFile(object):
 		song.duration = 1337
 		song.musictype = 'other'
 
+		# best tag group
+		btg = find_best_tag_group(self.taggroups,0)
+
+
+		print btg
+
+
+		for tag in btg.tags:
+			if tag.type==u'artist':
+				song.artist = tag.value
+			elif tag.type==u'release':
+				song.release = tag.value
+			elif tag.type==u'track':
+				song.track = tag.value
+			elif tag.type==u'date':
+				song.date = tag.value
+			elif tag.type==u'tracknumber':
+				song.tracknumber = tag.value
+			elif tag.type==u'genre':
+				song.genre = tag.value
+			elif tag.type==u'label':
+				song.label = tag.value
+
 		return song
 
 	def merge_with_mergefile(self,mf):
@@ -136,12 +159,15 @@ class MergeFile(object):
 			print "*********************************************************"
 			print "*********************************************************"
 			print
-			print "ALERT! YOU ARE ABOUT TO ADD FILES WITH DIFFERENT FLAGS!!!"
+			print "ALERT! YOU ARE ABOUT TO ADD FILES WITH VERYING FLAGS!!!"
 			print
 			print "*********************************************************"
 			print "*********************************************************"
 		self.sourcefiles.extend(mf.sourcefiles)
 		self.taggroups.extend(mf.taggroups)
+
+	def __repr__(self):
+		return str(self.taggroups)
 
 def find_tagwise_similar_files(mf,mfs,level):
 	"""
@@ -233,4 +259,47 @@ def merge_files_by_md5(mfs):
                         mergefile.merge_with_mergefile(mf)
         return result
 
+def _recursive_property_merge(songs,filters):	
+	if len(songs) <= 1: 
+		return songs
 
+	# no filter left, everything that is still the same, must be merged	
+	if len(filters) == 0:
+		for s in songs[1:]:
+			songs[0].sources.extend(s.sources)
+		return songs[0:0]
+
+	filt = filters[0]
+	filts = filters[1:]
+
+	songs.sort(filt)
+
+	oldsong = songs[0]
+	same = [oldsong]
+	for s in songs[1:]:
+		if filt(oldsong,s) == 0:	# they are the same
+			same.append(s)
+		else:
+			_recursive_property_merge(same,filts)
+			oldsong = s
+			same = [oldsong]
+	
+	_recursive_property_merge(same,filts)	# merge the last matches
+
+	return songs
+
+def merge_songs_by_properties(songs):
+	"""
+	Merges passed `songs` by comparing their properties. If they are the same
+	they will be merged into one song.
+	"""
+
+	filters = [ lambda a,b : cmp(a.track,b.track),
+                    lambda a,b : cmp(a.release,b.release),
+                    lambda a,b : cmp(a.artist,b.artist),
+                    lambda a,b : cmp(a.date,b.date),
+                    lambda a,b : cmp(a.tracknumber,b.tracknumber),
+                    lambda a,b : cmp(a.label,b.label),
+                    lambda a,b : cmp(a.release,b.release) ]
+	
+	return _recursive_property_merge(songs,filters)
