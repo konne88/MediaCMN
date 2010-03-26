@@ -67,15 +67,9 @@ def find_best_tag_group(tgs,minRating):
 			rating += SOURCE_RATING[t.source]
 		rating = rating / len(tg.tags)
 		
-		print tg
 		if rating >= bestRating:
 			bestRating = rating
 			bestGroup = tg
-
-
-	print
-	print "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-	print
 
 	return bestGroup
 

@@ -86,11 +86,10 @@ def main(opts):
 			songs.append(mf.to_song())
 		
 		# Merge files that have the same set of tags
-		#songs = merge_songs_by_properties(songs)
+		songs = merge_songs_by_properties(songs)
 
 		# Write merged files into the database
 		for s in songs:
-			print s
 			db.add_song(s)
 
 		opts.print_done()

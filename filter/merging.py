@@ -131,10 +131,6 @@ class MergeFile(object):
 		# best tag group
 		btg = find_best_tag_group(self.taggroups,0)
 
-
-		print btg
-
-
 		for tag in btg.tags:
 			if tag.type==u'artist':
 				song.artist = tag.value
@@ -267,26 +263,27 @@ def _recursive_property_merge(songs,filters):
 	if len(filters) == 0:
 		for s in songs[1:]:
 			songs[0].sources.extend(s.sources)
-		return songs[0:0]
+		return songs[0:1]
 
 	filt = filters[0]
 	filts = filters[1:]
 
 	songs.sort(filt)
 
+	ret = []
 	oldsong = songs[0]
 	same = [oldsong]
 	for s in songs[1:]:
 		if filt(oldsong,s) == 0:	# they are the same
 			same.append(s)
 		else:
-			_recursive_property_merge(same,filts)
+			ret.extend( _recursive_property_merge(same,filts) )
 			oldsong = s
 			same = [oldsong]
 	
-	_recursive_property_merge(same,filts)	# merge the last matches
+	ret.extend( _recursive_property_merge(same,filts) )	# merge the last matches
 
-	return songs
+	return ret
 
 def merge_songs_by_properties(songs):
 	"""
