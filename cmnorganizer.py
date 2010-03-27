@@ -22,91 +22,50 @@ import os
 import shutil
 
 import organizer.index as index
-from organizer.file import get_new_relativename, get_file_infos, create_nonexistant_dirs
-from organizer.mp3file import transform_to_mp3, set_file_id3_tags
 import organizer.options as options
+from organizer.file import get_new_filename,    \
+			   get_copyfile,    \
+			   copy_file_to_target
 
-def copy_file_to_target(db,ft,opts):
-	infos = get_file_infos(ft.tags,opts.level)
-	fullname = os.path.join(ft.path,ft.name+ft.ext)
-	
-	print '\t',fullname
-	
-	if not os.path.exists(fullname):
-		print "\tFile doesn't exist"
-		return
-	
-	# if not is_file_mp3(fullname):
-	#	return
-		
-		# TODO
-		# Add mp3 conversion
-		
-	#	print "\tNeeds to be converted to mp3"
-	#	tempname = u'/tmp/cmn-organizer-'+unicode(os.getpid())+u'.mp3'
-	#	transform_to_mp3(fullname,tempname)
-	#	
-	#	if not os.path.exists(tempname):
-	#		print "\tCouldn't be converted to mp3"
-	#		return
-	#	fullname = tempname
-	
-	newRelativename = get_new_relativename(opts.target,opts.filepattern,infos,opts.restrictions)
-	
-	if newRelativename == None:
-		print "Generation of a new filename failed"
-		print infos
-		return
-	
-	newFullname = os.path.join(opts.target,newRelativename)
-	print '\t',newFullname
-	if os.path.exists(newFullname):
-		print "\tFile can't be copied to the destination, it already exists."
-		return
-	create_nonexistant_dirs(opts.target,newRelativename)
-	shutil.copyfile(fullname,newFullname)
-	
-	set_file_id3_tags(newFullname,infos)
-	
-	pathSplit = os.path.split(newFullname)
-	fileSplit = os.path.splitext(pathSplit[1])
-	
-	if opts.newIndex != None:
-		db.copy_file_from_index_with_new_fullname(ft.id,pathSplit[0],fileSplit[0],fileSplit[1],opts.index)
+def check_sources(files):
+	# print sources
+	for f in files:
+		print "\tSource  :",f
+		if not os.path.exists(f.get_fullname()):
+			print "Source doesn't exist"
+			return False
+	return True
 	
 def main(opts):
-	db = None
-	
-	if opts.newIndex != None:
-		db = index.OrganizerIndex(opts.newIndex,opts.user,opts.pw)
-		if opts.drop:
-			print "Dropping new index tables"
-			db.drop_tables()
-			print "----------------------------------------------"
-		print "Creating new index `"+opts.newIndex+"`"
-		db.copy_every_table_except_for_files_from_index(opts.index)
-		db.create_files_table()
-		print "----------------------------------------------"
-	else:
-		# connect with no database if newIndex is not specified	
-		db = index.OrganizerIndex('',opts.user,opts.pw)
-		
 	try:
-		fts = db.get_all_files_with_tags_from_index(opts.index)
-		for ft in fts:
-			print 'Organizing file "'+unicode(ft.id)+'":'
-			copy_file_to_target(db,ft,opts)
-		print "----------------------------------------------"
-		
-		print "Organizer done."
-		print "----------------------------------------------"
-			
+		opts.print_init()
+		db = index.OrganizerIndex(opts.index,opts.user,opts.pw)
+		ids = db.get_song_ids()
+		for id_ in ids:
+			print u"Organizing file",id_,u":"
+			song,files = db.get_song_with_sourcefiles(id_)
+			if check_sources(files):
+				# generate new filename
+				filename = get_new_filename(song, opts.target,
+					opts.filepattern, opts.restrictions)
+				if filename == None:
+					print "Generation of a new filename failed."
+				else:
+					print "\tFilename:",filename
+					# find the source to copy from
+					copyfile = get_copyfile(files)
+					copyname = copyfile.get_fullname()
+					print "\tCopyfile:",copyfile
+					# copy and do all files transformations
+					ismp3 = copyfile.flags['musictype'] == 'mp3'
+					if ismp3 == False:
+						print "\tNeeds to be converted to mp3."
+					copy_file_to_target(filename,copyname,ismp3,song);
+			opts.print_sep()
+
+		opts.print_done()
 	except KeyboardInterrupt:
-		print
-		print
-		print "----------------------------------------------"
-		print "Organizer terminated."
-		print "----------------------------------------------"
+		opts.print_terminated()
 
 if __name__ == "__main__":
 	opts = options.OrganizerOptions()

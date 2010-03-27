@@ -72,7 +72,7 @@ def generate_fingerprint_and_lookup_tags_if_online (fullname):
 				if text == 'true':
 					playable = True
 			elif name == 'duration':
-				duration == int(text)
+				duration = int(text)
 			else:
 				taggroups[0].tags.append(FileTag(None,text,name,'musicip',None))
 		

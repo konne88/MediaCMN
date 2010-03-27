@@ -89,7 +89,8 @@ class FilterIndex(Index):
 		"""Inserts a song into the index."""
 		self._cursor.execute(u'''
 			INSERT INTO songs (
-				copyid,	duration, artist, `release`, track, date, tracknumber, genre, label, musictype
+				copyid,	duration, artist, `release`, track,
+				date, tracknumber, genre, label, musictype
 			) VALUES (
 				%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
 			);
@@ -101,7 +102,7 @@ class FilterIndex(Index):
 		song.id = self._db.insert_id()
 		self.add_sources(song.id,song.sources)
 		return song.id
-	
+
 	def get_music_file_ids_md5_ordered(self):
 		self._cursor.execute(u'''
 			SELECT 

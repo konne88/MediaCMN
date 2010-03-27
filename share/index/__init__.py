@@ -122,9 +122,9 @@ class Index(object):
 		q = u'''
 			SELECT 
 				s.id AS id,
-				s.ext AS path,
-				s.path AS name,
-				s.name AS ext
+				s.path AS path,
+				s.name AS name,
+				s.ext AS ext
 		'''
 		for flag in flags:
 			if flag=='puid':

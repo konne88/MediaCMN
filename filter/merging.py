@@ -176,7 +176,7 @@ def find_tagwise_similar_files(mf,mfs,level):
 	The similar files will include `mf` for sure
 	"""
 	# this algorythm moves all similar entries from the mfs to the similar list
-	similar = [mf]
+	similar = []
 	for s in similar:
 		for i in xrange(len(mfs)):
 			# We can not use those groups of tags that were downloaded from the
@@ -221,7 +221,7 @@ def merge_files_by_flag_and_tags(mfs,level,flag):
 		flagval = mfs[0].flags[flag]
 		for mf in mfs[1:]:
 			if flagval != mf.flags[flag]:
-				# a group just ended here. Check for similarity				
+				# a group just ended here. Check for similarity
 				result.extend(merge_files_by_similar_tags(group,level))
 				# a new group starts here
 				mergefile = mf
@@ -252,7 +252,8 @@ def merge_files_by_md5(mfs):
                                 mergefile = mf
                                 result.append(mergefile)
                                 md5 = mf.flags['md5id']
-                        mergefile.merge_with_mergefile(mf)
+			else:
+		                mergefile.merge_with_mergefile(mf)
         return result
 
 def _recursive_property_merge(songs,filters):	

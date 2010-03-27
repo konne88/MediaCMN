@@ -24,10 +24,10 @@ from share.options import check
 class FilterOptions(CopyIndexOptions):
 	def __init__(self):
 		super(FilterOptions,self).__init__()
-		self.filter = ''
+		self.filter = 'mpf'
 		self.level = 0.0
 		
-		self.name = "Filter"
+		self._appname = "Filter"
 		self._opts.append(('level','l',"NUMBER","some filters find duplicate files"
 			" by scanning them for acoustic similarity\n"
 			"that is important because the same track will look different to the computer\n"

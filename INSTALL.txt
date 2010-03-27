@@ -30,4 +30,27 @@ Before installing MediaCMN, you need to install the following libraries:
 
  * python-all-dev
 
+
+Installing the cmnfingerprinter
+-------------------------------
+
+The fingerprinter is a component written in C++. I used eclipse to build it.
+This application is needed by the indexer, therefore it is important that you
+make sure that the fingerprinter can be found.
+You may for example create a link in the /usr/local/bin directory
+
+
+Installing the Swing GUI
+------------------------
+
+The swing GUI was designed with Netbeans.
+
+
+Everything else
+---------------
+
+It's python, simply run it!
+
+
+
 Please read README.txt for more information.

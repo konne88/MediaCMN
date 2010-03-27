@@ -73,6 +73,7 @@ def parse_file(db,fullname,path,filename,count):
 	print '\tOnln:',online
 	print '\tSize:',size/1024/1024,"mb"
 	print '\tMd5 :',md5hash
+	print '\tLen:',duration,'ms'
 	if fingerprint!=None:
 		print '\tPrnt:',fingerprint[:25]+"..."+fingerprint[-25:]
 	if puid!=None:

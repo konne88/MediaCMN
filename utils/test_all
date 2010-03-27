@@ -5,8 +5,9 @@
 # test_index
 # 
 # The parameters that needs to be passed to the script are 
-# the name of the folder where your sample music files lye in.
+# the name of the folder where your sample music files lie in.
 # and the password that is used in order to acces the MySql database for root.
+# and the folder where the music library will be created
 
 echo
 echo " *** RUNNING THE INDEXER *** "
@@ -23,5 +24,5 @@ echo
 echo
 echo " *** RUNNING THE ORGANIZER *** "
 echo
-#./cmnorganizer.py -i test_tagger --drop -p $2 -f "%t-%r-%a-%n-%d--%%-" -l 0.5 -n test_library -r 1 /media/data/development/resources/testing/music_library
+./cmnorganizer.py -p $2 -f "%t-%r-%a-%n-%d--%%-" -i test_index $3
 

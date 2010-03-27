@@ -15,6 +15,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import os
+
 class IndexedFile(object):
 	def __init__(self,id,path,name,ext):
 		self.taggroups = []
@@ -33,6 +35,12 @@ class IndexedFile(object):
 		self._id = value
 		for group in self.taggroups:
 			group.fileid = self._id
+
+	def get_fullname(self):
+		return os.path.join(self.path,self.name+self.ext)
+
+	def __repr__(self):
+		return self.get_fullname()
 
 class TagGroup(object):
 	def __init__(self,id,fileid):
