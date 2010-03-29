@@ -18,7 +18,6 @@
 import _mysql_exceptions
 
 from share.index import Index
-from entries import Tag, FilePuidWithTags
 
 class TaggerIndex(Index):
 	def __init__(self,dbname,user,pw):
@@ -53,92 +52,3 @@ class TaggerIndex(Index):
 			simpleids.append(id_[0])
 		return simpleids
 
-	##### obsolete ###########
-
-	@staticmethod				
-	def _create_file(res,i,fs):
-		id = res[i][0]
-		puid = res[i][1]
-	
-		ts = []
-	
-		while True:
-			i = TaggerIndex._create_tag(res,i,ts)
-			if len(res) == i or res[i][0] != id:
-				break
-			
-		fs.append( FilePuidWithTags(id,puid,ts) )
-		return i
-
-	@staticmethod
-	def _create_tag(res,i,ts):
-		value = res[i][2]
-		type = res[i][3]
-		rating = res[i][4]
-	
-		if value != None:
-			ts.append( Tag(value,type,rating) )
-	
-		return i+1
-
-	@staticmethod
-	def _create_files_from_flat_list(res):
-		fs = []
-		i = 0
-		while i<len(res):
-			i = TaggerIndex._create_file(res,i,fs)
-	
-		return fs
-	
-	def get_files_with_tags_and_puid(self):
-		self._cursor.execute(u'''
-			SELECT 
-				f.id,
-				p.value AS puid,
-				t.value,
-				t.type,
-				t.source
-			FROM
-				files AS f
-			LEFT JOIN
-				puids AS p
-			ON
-				f.puidid = p.id
-			JOIN
-				tags AS t
-			ON
-				f.id = t.fileid
-			ORDER BY
-				f.id;
-		''')
-
-		res = self._cursor.fetchall()
-		
-		fs = TaggerIndex._create_files_from_flat_list(res)
-		return fs
-
-	def update_all_tags(self,tfs):
-		self._cursor.execute(u"TRUNCATE TABLE tags;")
-		
-		if tfs == []:
-			return
-		
-		q = u"""
-			INSERT INTO tags (
-				file,value,type,source
-			) VALUES 
-		"""
-		vals = []
-		
-		for f in tfs:
-			for t in f.tags:
-				q+=u"(%s,%s,%s,%s),"
-				vals.append(f.id)
-				vals.append(t.value)
-				vals.append(t.type)
-				vals.append(t.source)
-		
-		# remove last ','
-		q = q[0:-1]+u";"
-		
-		self._cursor.execute(q,vals)

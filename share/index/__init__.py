@@ -22,6 +22,7 @@
 import MySQLdb
 from share.entries import IndexedFile, TagGroup, FileTag
 
+
 class Index(object):
 	"""Represents the index where all information is stored."""
 

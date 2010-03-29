@@ -15,13 +15,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-from share.options import CopyIndexOptions
+from share.options import CommonCmnOptions
 from share.options import check
 
 #http://www.rubyrobot.org/article/duplicate-a-mysql-database
 #mysqladmin create DB_name -u DB_user --password=DB_pass mysqldump -u DB_user --password=DB_pass DB_name | mysql -u DB_user --password=DB_pass -h DB_host DB_name
 
-class FilterOptions(CopyIndexOptions):
+class FilterOptions(CommonCmnOptions):
 	def __init__(self):
 		super(FilterOptions,self).__init__()
 		self.filter = 'mpf'

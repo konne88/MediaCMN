@@ -122,9 +122,9 @@ class Index(object):
 		q = u'''
 			SELECT 
 				s.id AS id,
-				s.ext AS path,
-				s.path AS name,
-				s.name AS ext
+				s.path AS path,
+				s.name AS name,
+				s.ext AS ext
 		'''
 		for flag in flags:
 			if flag=='puid':
@@ -157,10 +157,9 @@ class Index(object):
 		for flag in flags:
 			file_.flags[flag] = res[0][i]
 			i=i+1
-		file_.tags = self.get_file_tags(fileid)
 		return file_
 	
-	def get_file_tags(self,fileid):
+	def get_file_taggroups(self,fileid):
 		self._cursor.execute(u'''
 			SELECT 
 				g.id AS groupid,
@@ -177,6 +176,7 @@ class Index(object):
 				g.id;
 		''',(fileid,))
 		res = self._cursor.fetchall()
+
 		if res==None:
 			return None
 		# creates an object oriented view of  
@@ -193,11 +193,13 @@ class Index(object):
 				type_ = res[i][4]
 				group.tags.append( FileTag(id_,value,type_,source,groupid) )
 				i=i+1
+			groups.append(group)
 		return groups
 
 	def get_file(self,fileid,flags):
 		file_ = self.get_file_without_tags(fileid,flags)
-		file_.tags = self.get_file_tags(fileid)
+		file_.taggroups = self.get_file_taggroups(fileid)
+
 		return file_
 
 	def _create_files_table(self):
@@ -209,7 +211,8 @@ class Index(object):
 				ext         VARCHAR(8) CHARSET 'utf8' BINARY NOT NULL,
 				
 				size        BIGINT UNSIGNED NOT NULL,
-				
+				duration    INT UNSIGNED,
+
 				musicip_online  BOOL NOT NULL,
 				musictype   ENUM (
 					'mp3',
@@ -269,7 +272,6 @@ class Index(object):
 					'artist',
 					'release',
 					'track',
-					'duration',
 					'date',
 					'tracknumber',
 					'genre',
@@ -297,122 +299,30 @@ class Index(object):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	#### OBSOLETE ####
-		
-	def _copy_hash_table_from_index(self,index,name):
-		self._cursor.execute(u"""CREATE TABLE IF NOT EXISTS 
-				"""+name+u""" (
-					id SERIAL, PRIMARY KEY(id),
-					UNIQUE(value)
-				)
-			SELECT 
-				* 
-			FROM 
-				`"""+index+u"""`."""+name+u""";
-		""")
-	
-	def _copy_md5s_table_from_index(self,index):
-		self._copy_hash_table_from_index(index,u"md5s")
-		
-	def _copy_fingerprints_table_from_index(self,index):
-		self._copy_hash_table_from_index(index,u"fingerprints")
-		
-	def _copy_puids_table_from_index(self,index):
-		self._copy_hash_table_from_index(index,u"puids")
-	
-	def _copy_files_table_from_index(self,index):
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS 
-				files (
-					id SERIAL, PRIMARY KEY(id),
-					FOREIGN KEY (md5id) REFERENCES md5s.id,
-					FOREIGN KEY (fingerprintid) REFERENCES fingerprints.id,
-					FOREIGN KEY (puidid) REFERENCES puids.id
-				)
-			SELECT
-				*
-			FROM 
-				`"""+index+u"""`.files;
-		""")
-		
-	def _copy_tags_table_from_index(self,index):
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS 
-				taggroups (
-					id SERIAL, PRIMARY KEY(id),
-					FOREIGN KEY(fileid) REFERENCES files.id
-				)
-			SELECT
-				*
-			FROM
-				`"""+index+u"""`.taggroups
-		""")
-
-	def _copy_tags_table_from_index(self,index):
-		self._cursor.execute(u"""
-			CREATE TABLE IF NOT EXISTS 
-				tags (
-					id SERIAL, PRIMARY KEY(id),
-					FOREIGN KEY(groupid) REFERENCES taggroups.id
-				)
-			SELECT
-				*
-			FROM
-				`"""+index+u"""`.tags
-		""")
-
-	def copy_tables_from_index(self,index):
-		"""Copies all tables from `index` to the current index."""
-		self._copy_md5s_table_from_index(index)
-		self._copy_fingerprints_table_from_index(index)
-		self._copy_puids_table_from_index(index)
-		self._copy_files_table_from_index(index)
-		self._copy_taggroups_table_from_index(index)
-		self._copy_tags_table_from_index(index)
-		
-	def drop_tables(self):
-		"""Drops/Deletes all tabels in the index."""
-		self._cursor.execute(u'''
-			DROP TABLE IF EXISTS 
-				files,
-				md5s,
-				fingerprints,
-				puids,
-				taggroups,
-				tags
-			;
-		''')
-
-	def add_tag_to_file(self,tag):
-		self._cursor.execute(u'''
-			INSERT INTO tags (
-				file,value,type,source
-			) VALUES (
-				%s,%s,%s,%s
-			);
-		''',
-			(fileid,value,type,source)
-		)
-	
-	def add_tags_to_file(self,tags,fileid):
-		if tags != []:
-			q = u"""
-				INSERT INTO tags (
-					file,value,type,source
-				) VALUES 
-			"""
-			vals = []
-			for tag in tags:
-				q+=u"(%s,%s,%s,%s),"
-		
-				vals.append(fileid)
-				vals.append(tag.value)
-				vals.append(tag.type)
-				vals.append(tag.source)
-			
-			q = q[0:-1]+u";"
-	
-			self._cursor.execute(q,vals)
 		
 	def _add_hash(self,value,table):
 		# check if the hash is already added

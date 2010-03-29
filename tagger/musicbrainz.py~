@@ -21,7 +21,6 @@ import time
 from musicbrainz2.webservice import Query, TrackFilter, WebServiceError
 
 from entries import FileTag, TagGroup
-from share.entries.tagcomp import tag_similarity
 
 # how to use musicbrainz2
 # http://musicbrainz.org/doc/PythonMusicBrainz2

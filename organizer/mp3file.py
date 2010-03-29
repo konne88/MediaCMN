@@ -63,7 +63,8 @@ def set_file_id3_tags(fullname,song):
 	
 	for k in infos:
 		try:
-			meta[mapping[k]] = infos[k]
+			if infos[k] != None:
+				meta[mapping[k]] = infos[k]
 		except KeyError:
 			pass
 

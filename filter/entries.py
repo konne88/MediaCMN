@@ -35,23 +35,3 @@ class Song(object):
                             self.date,self.tracknumber,self.genre,self.label,
                             self.musictype))
 
-
-### obsolete ####
-
-class FileGroup(object):
-	def __init__(self,value,files):
-		self.value = value
-		self.files = files
-
-class MergeFiles(object):
-	def __init__(self,stayFileId,oldFileId):
-		self.stayFileId = stayFileId
-		self.oldFileId = oldFileId
-
-class FileIndexConnection(object):
-	def __init__(self,id,path,name,ext):
-		self.id = id
-		self.path = path
-		self.name = name
-		self.ext = ext
-

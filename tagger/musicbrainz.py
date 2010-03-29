@@ -20,7 +20,7 @@ import time
 
 from musicbrainz2.webservice import Query, TrackFilter, WebServiceError
 
-from entries import FileTag, TagGroup
+from share.entries import FileTag, TagGroup
 
 # how to use musicbrainz2
 # http://musicbrainz.org/doc/PythonMusicBrainz2

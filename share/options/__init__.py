@@ -187,39 +187,3 @@ class IndexOptions(CommonCmnOptions):
 				q = r
 		return q
 		
-class CopyIndexOptions(IndexOptions):
-	def __init__(self):
-		super(CopyIndexOptions,self).__init__()
-		self.targetIndex = None
-		self._opts.append(('copy','c',"MYSQLDB","copy all entries from the index"
-			" databse to the MYSQLDB database\n"
-			"if this option is used, all operations are performed on the copy"
-			" of the index\n"
-			"use with -d to remove entries from the target index before copying\n"
-			"using this option you can protect your index from accidental altering",
-			self.targetIndex))
-	
-	def _set_option_value(self,opt,val):
-		q = None
-		if opt == 'copy':
-		  	v = check.make_mysql_identifier(val)
-		  	if v == None:
-		  		print "Passed copy target index is not a valid mysql database name."
-		  		q = 1
-		  	else:
-		  		self.targetIndex = v
-		else:
-			r = super(CopyIndexOptions,self)._set_option_value(opt,val)
-			if r != None:
-				q = r
-		
-		return q
-		
-	def _all_options_loaded(self):
-		quit = super(CopyIndexOptions,self)._all_options_loaded()
-		
-		if self.targetIndex == None and self.drop == True:
-			print "Drop options can't be used without the copy option."
-			quit=1
-			
-		return quit
