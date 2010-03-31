@@ -44,9 +44,6 @@ def get_puid_tags(puid):
 	q = Query()
 	res = []
 	try:
-
-		print puid
-
 		f = TrackFilter(puid=puid)
 		results = q.getTracks(f)
 	except WebServiceError, e:

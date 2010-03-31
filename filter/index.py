@@ -22,63 +22,54 @@ from share.entries import FileTag, TagGroup
 #from groupfilter import filter_check_groups_using_tags, filter_unchecked
 
 class FilterIndex(Index):
-	def __init__(self,dbname,user,pw):
-		super(FilterIndex,self).__init__(dbname,user,pw)
+	def __init__(self,reference):
+		super(FilterIndex,self).__init__(reference)
 
 	def drop_tables(self):
 		self._cursor.execute(u'''DROP TABLE IF EXISTS 
-			songs, 
-			song_sources;
-		''')
+			songs;''')
+		self._cursor.execute(u'''DROP TABLE IF EXISTS 
+			song_sources;''')
 
 	def _create_songs_table(self):
 		self._cursor.execute(u'''
 			CREATE TABLE IF NOT EXISTS songs (
-				id          SERIAL, PRIMARY KEY(id),
-				copyid      BIGINT UNSIGNED NOT NULL, FOREIGN KEY (copyid) REFERENCES files.id,
+				id          INTEGER PRIMARY KEY,
+				copyid      INTEGER UNSIGNED NOT NULL,
 				
 				duration    INT UNSIGNED NOT NULL,
-				artist      VARCHAR(255) CHARSET 'utf8',
-				`release`   VARCHAR(255) CHARSET 'utf8',
-				track       VARCHAR(255) CHARSET 'utf8',
-				date        VARCHAR(255) CHARSET 'utf8',
-				tracknumber VARCHAR(255) CHARSET 'utf8',
-				genre       VARCHAR(255) CHARSET 'utf8',
-				label       VARCHAR(255) CHARSET 'utf8',
+				artist      VARCHAR(255),
+				`release`   VARCHAR(255),
+				track       VARCHAR(255),
+				date        VARCHAR(255),
+				tracknumber VARCHAR(255),
+				genre       VARCHAR(255),
+				label       VARCHAR(255),
 
-				musictype   ENUM (
-					'mp3',
-					'other'
-				) CHARSET 'utf8' NOT NULL
+				musictype   VARCHAR(5) NOT NULL
 			);
 		''')
 
 	def _create_song_sources_table(self):
 		self._cursor.execute(u'''
 			CREATE TABLE IF NOT EXISTS song_sources (
-				songid      BIGINT UNSIGNED NOT NULL, FOREIGN KEY (songid) REFERENCES songs.id,
-				fileid      BIGINT UNSIGNED NOT NULL, FOREIGN KEY (fileid) REFERENCES files.id
+				songid      INTEGER UNSIGNED NOT NULL,
+				fileid      INTEGER UNSIGNED NOT NULL
 			);
 		''')
-		return self._db.insert_id()
+		return self._cursor.lastrowid
 		
 	def create_tables(self):
 		self._create_songs_table()
 		self._create_song_sources_table()
 		
 	def add_sources(self,songid,sources):
-		s = []
-		q = ''
 		for source in sources:
-			s.append(songid)
-			s.append(source)
-			q+=u'(%s,%s),'
-		q = q[0:-1]+u";"
-
-		self._cursor.execute(u'''
-			INSERT INTO song_sources (
-				songid,fileid
-			) VALUES '''+q,s)
+			self._cursor.execute(u'''
+				INSERT INTO song_sources (
+					songid,fileid
+				) VALUES (%s,%s);''',
+			(songid,source))
 
 	def add_songs(self,songs):
 		"""Insert multiple songs into the index."""
@@ -99,7 +90,7 @@ class FilterIndex(Index):
 			song.release, song.track, song.date, song.tracknumber,
 			song.genre, song.label, song.musictype)
 		)
-		song.id = self._db.insert_id()
+		song.id = self._cursor.lastrowid
 		self.add_sources(song.id,song.sources)
 		return song.id
 

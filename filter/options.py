@@ -24,7 +24,7 @@ from share.options import check
 class FilterOptions(CommonCmnOptions):
 	def __init__(self):
 		super(FilterOptions,self).__init__()
-		self.filter = 'mpf'
+		self.filter = 'mpft'
 		self.level = 0.0
 		
 		self._appname = "Filter"
@@ -43,18 +43,15 @@ class FilterOptions(CommonCmnOptions):
 		
 		self._opts.append(('filter','f',"FILTER","FILTER is a combination"
 			" of the following options:\n"
-			"s  remove all files that are not playable\n"
 			"m  merge all files with a duplicate md5 hash\n"
 			"f  merge all files with a duplicate fingerprint\n"
 			"   makes use of the level argument\n"
 			"p  merge all files with a duplicate puid\n"
 			"   makes use of the level argument\n"
-			"c  remove all file entries referencing non existant files\n"
-			"   as well as unused tags and hashes",
+			"t  merge all files with duplicate tags",
 			self.filter))
 				
-		self._appdesc=("Filter an index, and save the result in this one,\n"
-			"or in a new index.")
+		self._appdesc="Filter the index by merging similar songs."
 
 	def _set_option_value(self,opt,val):
 		q = None

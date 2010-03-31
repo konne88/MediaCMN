@@ -30,7 +30,7 @@ from filter.merging import merge_files_by_flag_and_tags, 	\
 def main(opts):
 	try:
 		opts.print_init()
-		db = index.FilterIndex(opts.index,opts.user,opts.pw)
+		db = index.FilterIndex(opts.index_reference)
 		# recreate all tables that have something to do with the filter,
 		# so we don't have all the old stuff in the way
 		db.drop_tables()
@@ -41,7 +41,7 @@ def main(opts):
 		mfs = []
 		# list of all mergefiles with the flag being None. 
 		nullmfs = []
-		
+
 		# figure out which flags we need to load from the index
 		flags = []
 		for k,v in (('m','md5id'),('p','puidid'),('f','fingerprintid')):
@@ -53,7 +53,9 @@ def main(opts):
 		for fileid in fileids:
 			mf = MergeFile(db.get_file(fileid, flags))
 			mfs.append(mf)
-			
+
+		# variable holding merges for each step so we can print that
+		count = 0
 		# Apply all the needed filters
 		for k,flag,f,t in (('m','md5id',merge_files_by_md5,"md5 hashes"),
                             ('f', 'fingerprintid', lambda a : 
@@ -73,20 +75,27 @@ def main(opts):
 					else:
 						i=i+1
 				# do the actual filtering
-				print "Merging files with duplicate %s."%t			
+				print "Merging files with duplicate %s."%t
+				count = len(mfs)
 				mfs = f(mfs)
+				print "%d succesful merges."%(count-len(mfs))
 				opts.print_sep()
 
 		# Merge with the leftout Files again
 		mfs.extend(nullmfs)
 
-		# Create songs and therefore also decide one set of tags
+		# Create songs and therefore also decide on one set of tags
 		songs = []		
 		for mf in mfs:
 			songs.append(mf.to_song())
 		
 		# Merge files that have the same set of tags
-		songs = merge_songs_by_properties(songs)
+		if opts.filter.find('t') != -1:
+			print "Merging files with duplicate tags."
+			count = len(songs)		
+			songs = merge_songs_by_properties(songs)
+			print "%d succesful merges."%(count-len(songs))
+			opts.print_sep()
 
 		# Write merged files into the database
 		for s in songs:
@@ -100,59 +109,4 @@ if __name__ == "__main__":
 	opts = options.FilterOptions()
 	opts.parse_cmdline_arguments(sys.argv)
 	main(opts)
-
-
-
-#	if opts.filter.find('c') != -1:
-#			print "Removing non existant file entries"
-#			x = 0
-#			files = db.get_all_file_index_connections()
-#			for f in files:
-#				fn = os.path.join(f.path,f.name+f.ext)
-#				if not os.path.exists(fn):
-#					print '\t',fn
-#					db.remove_file(f.id)
-#					x+=1
-#			print x, "files removed"
-#			print "----------------------------------------------"
-#			print "Cleaning tags"
-#			db.clean_tags()
-#			print "----------------------------------------------"
-#			print "Cleaning md5s"
-#			db.clean_md5s()
-#			print "----------------------------------------------"
-#			print "Cleaning fingerprints"
-#			db.clean_fingerprints()
-#			print "----------------------------------------------"
-#			print "Cleaning puids"
-#			db.clean_puids()
-#			print "----------------------------------------------"
-
-#def get_matching_puid_tags(f):
-#	fts = f.tags
-#	if f.puid != None:
-#		ptss = _get_puid_tags(f.puid)
-#		if ptss == None:
-#			return None			
-#
-#		bestSim = 0                 # best similarity
-#		bestTags = []
-#		for pts in ptss:
-#			sim = tag_similarity(fts,pts)
-#			if sim >= bestSim:
-#				bestTags = pts
-#				bestSim = sim
-#				
-#		if bestSim >= matchLevel:
-#			if bestTags != []:
-#				# at this point we got the best matching tags
-#				return FileIdWithTags(f.id,bestTags)
-#		
-#		print '\tNo appropriate tags found for track on musicbrainz'
-#	else:
-#		print '\tNo puid exists for file'
-#
-	# at this point we couldn't find any tags for the file#
-	# we just leave the old tags
-#	return FileIdWithTags(f.id,fts)
 

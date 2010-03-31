@@ -114,13 +114,13 @@ def examen_dir(db,dirname,count):
 def main(opts):
 	try:
 		opts.print_init()
-		db = index.Index(opts.index,opts.user,opts.pw)
 
 		if opts.drop:
 			print "Dropping tables"
-			db.drop_tables()
+			index.Index.drop_content(opts.index_reference)
 			opts.print_sep()
-			
+		db = index.Index(opts.index_reference)
+
 		print "Creating tables"
 		db.create_tables()
 		opts.print_sep()
@@ -134,6 +134,7 @@ def main(opts):
 				count = examen_dir(db,s,count)
 		
 		opts.print_done()
+
 	except KeyboardInterrupt:
 		opts.print_terminated()
 

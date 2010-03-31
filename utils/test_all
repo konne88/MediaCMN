@@ -10,19 +10,48 @@
 # and the folder where the music library will be created
 
 echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+echo
 echo " *** RUNNING THE INDEXER *** "
 echo
-./cmnindexer.py -i test_index --drop -p $2 -u root $1
+./cmnindexer.py -i $2 --drop $1
 echo
 echo " *** RUNNING THE TAGGER *** "
 echo
-./cmntagger.py -i test_index -p $2
+./cmntagger.py -i $2
 echo
 echo " *** RUNNING THE FILTER *** "
 echo
-./cmnfilter.py -i test_index --password $2 -l 0.3 --filter mfp
+./cmnfilter.py -i $2 -l 0.3 --filter mfpt
 echo
 echo " *** RUNNING THE ORGANIZER *** "
 echo
 #./cmnorganizer.py -p $2 -f "%t-%r-%a-%n-%d--%%-" -i test_index $3
-./cmnorganizer.py -p $2 -i test_index $3
+./cmnorganizer.py -i $2 $3

@@ -27,7 +27,7 @@ import share.options as options
 def main(opts):
 	try:
 		opts.print_init()
-		db = index.TaggerIndex(opts.index,opts.user,opts.pw)
+		db = index.TaggerIndex(opts.index_reference)
 		db.append_to_files_table()
 
 		print "Caching database entries"

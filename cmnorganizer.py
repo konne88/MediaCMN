@@ -39,7 +39,7 @@ def check_sources(files):
 def main(opts):
 	try:
 		opts.print_init()
-		db = index.OrganizerIndex(opts.index,opts.user,opts.pw)
+		db = index.OrganizerIndex(opts.index_reference)
 		ids = db.get_song_ids()
 		for id_ in ids:
 			print u"Organizing file",id_,u":"
@@ -51,11 +51,11 @@ def main(opts):
 				if filename == None:
 					print "Generation of a new filename failed."
 				else:
-					print "\tFilename:",filename
 					# find the source to copy from
 					copyfile = get_copyfile(files)
 					copyname = copyfile.get_fullname()
 					print "\tCopyfile:",copyfile
+					print "\tFilename:",filename
 					# copy and do all files transformations
 					ismp3 = copyfile.flags['musictype'] == 'mp3'
 					if ismp3 == False:

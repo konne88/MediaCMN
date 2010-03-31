@@ -19,8 +19,8 @@ from share.index import Index
 from filter.entries import Song
 
 class OrganizerIndex(Index):
-	def __init__(self,dbname,user,pw):
-		super(OrganizerIndex,self).__init__(dbname,user,pw)
+	def __init__(self,reference):
+		super(OrganizerIndex,self).__init__(reference)
 
 	def get_song_ids(self):
 		self._cursor.execute(u"""
@@ -59,7 +59,7 @@ class OrganizerIndex(Index):
 				id = s.songid
 			WHERE
 				id = %s;
-			''',id_)
+			''',(id_,))
 		res = self._cursor.fetchall()
 		if len(res) == 0:
 			return None

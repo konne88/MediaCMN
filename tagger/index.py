@@ -20,8 +20,8 @@ import _mysql_exceptions
 from share.index import Index
 
 class TaggerIndex(Index):
-	def __init__(self,dbname,user,pw):
-		super(TaggerIndex,self).__init__(dbname,user,pw)
+	def __init__(self,reference):
+		super(TaggerIndex,self).__init__(reference)
 
 	def set_file_musicbrainz_online(self,fileid,val):
 		self._cursor.execute(u'''UPDATE files SET musicbrainz_online = %s 
@@ -30,7 +30,7 @@ class TaggerIndex(Index):
 	def append_to_files_table(self):
 		try:
 			self._cursor.execute(u'''ALTER TABLE files ADD 
-				musicbrainz_online BOOL NOT NULL;''')
+				musicbrainz_online BOOL NOT NULL DEFAULT false;''')
 		except _mysql_exceptions.OperationalError as err:
 			if err[0] != 1060:
 				raise

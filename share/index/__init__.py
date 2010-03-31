@@ -19,23 +19,59 @@
 # http://mysql-python.sourceforge.net/MySQLdb.html
 # http://www.python.org/dev/peps/pep-0249/
 
-import MySQLdb
+import sqlite3
 from share.entries import IndexedFile, TagGroup, FileTag
+import os
 
+class IndexReference(object):
+	def __init__(self,path):
+		self.path = path
+
+class _SqliteCursorWrapper(sqlite3.Cursor):
+	"""This is a wrapper class for sqlite cursors, cause this class
+	needs ? instead of %s
+	"""
+	def __init__(self,db):
+		self._c = db.cursor()
+
+	def execute(self,query,values=()):
+		query = query.replace('%s','?')
+		return self._c.execute(query,values)
+
+	def fetchall(self):
+		f = self._c.fetchall()
+		return f
+		
+
+	def fetchone(self):
+		return self._c.fetchone()
+
+	@property
+	def lastrowid(self):
+		return self._c.lastrowid
 
 class Index(object):
 	"""Represents the index where all information is stored."""
 
-	def __init__(self,dbname,user,pw):
+	def __init__(self,reference):
 		"""Loads an index
-
-		Loads a mysql database using the databasename `dbname` 
-		a user with the needed privileges `user` and that users
-		password `pw
+		Loads a sqlite database using a path specified in the `reference`
 		"""
-		self._db     = MySQLdb.connect(passwd=pw,user=user,db=dbname,use_unicode = True,charset='utf8')
-		self._cursor = self._db.cursor()
 
+		self._db = sqlite3.connect(reference.path)
+		self._cursor = _SqliteCursorWrapper(self._db)
+
+	def __del__(self):
+		"Writes changes to the database file once not needed anymore."
+		self._db.commit()
+
+	@staticmethod
+	def drop_content(reference):
+		try: 
+			os.remove(reference.path)
+		except OSError:
+			pass
+		
 	def add_file(self,file_):
 		"""Add a file including all it's tags and flags to the index."""
 		qt = u'INSERT INTO files ( path,name,ext'
@@ -47,7 +83,7 @@ class Index(object):
 			vals.append(value)
 		q = qt+qb+u");"
 		self._cursor.execute(q,vals)
-		file_.id = self._db.insert_id()
+		file_.id = self._cursor.lastrowid
 		self.add_tag_groups(file_.taggroups)
 		return file_.id
 
@@ -81,9 +117,9 @@ class Index(object):
 				%s
 			);
 		''',
-			(taggroup.fileid)
+			(taggroup.fileid,)
 		)
-		taggroup.id = self._db.insert_id()
+		taggroup.id = self._cursor.lastrowid
 		self.add_tags(taggroup.tags)
 		return taggroup.id
 
@@ -103,8 +139,55 @@ class Index(object):
 		''',
 			(tag.groupid,tag.value,tag.type,tag.source)
 		)
-		tag.id = self._db.insert_id()
+		tag.id = self._cursor.lastrowid
 		return tag.id
+
+
+	def _add_hash(self,value,table):
+		# check if the hash is already added
+		# if so return the entries id
+		
+		self._cursor.execute(u"""
+			SELECT 
+				id 
+			FROM 
+				"""+table+u"""
+			WHERE
+				value = %s;
+		""",
+			(value,)
+		)
+		
+		res = self._cursor.fetchone()
+		if res != None:
+			return res[0]
+		
+		# if the hash isn't added yet
+		# add it and return the generated id
+		self._cursor.execute(u"""
+			INSERT INTO """+table+u""" (
+				value
+			) VALUES (
+				%s
+			);
+		""",
+			(value,)
+		)
+
+		return self._cursor.lastrowid
+
+	def add_md5(self,md5):
+		return self._add_hash(md5,u"md5s")
+	
+	def add_puid(self,puid):
+		if puid == None:
+			return None
+		return self._add_hash(puid,u"puids")
+		
+	def add_fingerprint(self,fingerprint):
+		if fingerprint == None:
+			return None
+		return self._add_hash(fingerprint,u"fingerprints")
 
 	def get_file_ids(self):
 		self._cursor.execute(u"""
@@ -138,16 +221,22 @@ class Index(object):
 				q += u','+flag
 		q += u'''\nFROM
 				files AS s
-			LEFT JOIN
-				(puids AS p, md5s AS m, fingerprints AS f)
+			LEFT OUTER JOIN
+				puids AS p
 			ON
-				s.md5id = m.id AND
-				s.puidid = p.id AND
+				s.puidid = p.id
+			LEFT OUTER JOIN
+				md5s AS m
+			ON
+				s.md5id = m.id
+			LEFT OUTER JOIN
+				fingerprints AS f
+			ON
 				s.fingerprintid = f.id
 			WHERE
 				s.id = %s;
 		'''
-		self._cursor.execute(q,fileid)
+		self._cursor.execute(q,(fileid,))
 		res = self._cursor.fetchall()
 		if res==():
 			return None
@@ -204,41 +293,39 @@ class Index(object):
 		return file_
 
 	def _create_files_table(self):
-		self._cursor.execute(u"""
+		self._cursor.execute(u'''
 			CREATE TABLE IF NOT EXISTS files (
-				id          SERIAL, PRIMARY KEY(id),
-				path        VARCHAR(1024) CHARSET 'utf8' BINARY NOT NULL,
-				name        VARCHAR(255) CHARSET 'utf8' BINARY NOT NULL,
-				ext         VARCHAR(8) CHARSET 'utf8' BINARY NOT NULL,
-				
-				size        BIGINT UNSIGNED NOT NULL,
-				duration    INT UNSIGNED,
+				id          INTEGER PRIMARY KEY,
+
+				path        VARCHAR NOT NULL,
+				name        VARCHAR(255) NOT NULL,
+				ext         VARCHAR(8) NOT NULL,
+			
+				size        INTEGER UNSIGNED NOT NULL,
+				duration    INTEGER UNSIGNED,
 
 				musicip_online  BOOL NOT NULL,
-				musictype   ENUM (
-					'mp3',
-					'other'
-				) CHARSET 'utf8',
-				
-				md5id         BIGINT UNSIGNED NOT NULL, FOREIGN KEY (md5id) REFERENCES md5s.id,
-				fingerprintid BIGINT UNSIGNED, FOREIGN KEY (fingerprintid) REFERENCES fingerprints.id,
-				puidid        BIGINT UNSIGNED, FOREIGN KEY (puidid) REFERENCES puids.id
+				musictype       VARCHAR(5),
+
+				md5id         INTEGER UNSIGNED NOT NULL,
+				fingerprintid INTEGER UNSIGNED,
+				puidid        INTEGER UNSIGNED
 			);
-		""")
+		''');
 		
 	def _create_md5s_table(self):
 		self._cursor.execute(u"""
 			CREATE TABLE IF NOT EXISTS md5s (
-				id          SERIAL, PRIMARY KEY(id),
-				value       CHAR(32) CHARSET 'latin1' BINARY UNIQUE NOT NULL
+				id          INTEGER PRIMARY KEY,
+				value       CHAR(32) UNIQUE NOT NULL
 			);
 		""")
 	
 	def _create_puids_table(self):
 		self._cursor.execute(u"""
 			CREATE TABLE IF NOT EXISTS puids (
-				id          SERIAL, PRIMARY KEY(id),
-				value       CHAR(36) CHARSET 'latin1' BINARY UNIQUE NOT NULL
+				id          INTEGER PRIMARY KEY,
+				value       CHAR(36) UNIQUE NOT NULL
 			);
 		""") 
 		
@@ -248,8 +335,8 @@ class Index(object):
 		# holds data up to 255 Byte
 		self._cursor.execute(u"""
 			CREATE TABLE IF NOT EXISTS fingerprints (
-				id          SERIAL, PRIMARY KEY(id),
-				value       VARCHAR(756) CHARSET 'latin1' BINARY UNIQUE NOT NULL
+				id          INTEGER PRIMARY KEY,
+				value       VARCHAR(756) UNIQUE NOT NULL
 			);
 		""") 
 		
@@ -259,33 +346,19 @@ class Index(object):
 		# holds data up to 255 Byte
 		self._cursor.execute(u"""
 			CREATE TABLE IF NOT EXISTS taggroups (
-				id          SERIAL, PRIMARY KEY(id),
-				fileid      BIGINT UNSIGNED NOT NULL, FOREIGN KEY (fileid) REFERENCES files.id
+				id          INTEGER PRIMARY KEY,
+				fileid      INTEGER UNSIGNED NOT NULL
 			);
 		""") 
 		
 	def _create_tags_table(self):
 		self._cursor.execute(u"""
 			CREATE TABLE IF NOT EXISTS tags (
-				id          SERIAL, PRIMARY KEY(id),
-				value       VARCHAR(255) CHARSET 'utf8' NOT NULL,
-				type        ENUM (
-					'artist',
-					'release',
-					'track',
-					'date',
-					'tracknumber',
-					'genre',
-					'label'
-				) CHARSET 'utf8',
-				source      ENUM (
-					'metadata',
-					'filename',
-					'path',
-					'musicbrainz',
-					'musicip'
-				) CHARSET 'utf8',
-				groupid        BIGINT UNSIGNED NOT NULL, FOREIGN KEY (groupid) REFERENCES taggroups.id
+				id          INTEGER PRIMARY KEY,
+				value       VARCHAR(255) NOT NULL,
+				type        VARCHAR(10),
+				source      VARCHAR(11),
+				groupid     INTEGER UNSIGNED NOT NULL
 			);
 		""")
 
@@ -397,17 +470,7 @@ class Index(object):
 		self._copy_tags_table_from_index(index)
 		
 	def drop_tables(self):
-		"""Drops/Deletes all tabels in the index."""
-		self._cursor.execute(u'''
-			DROP TABLE IF EXISTS 
-				files,
-				md5s,
-				fingerprints,
-				puids,
-				taggroups,
-				tags
-			;
-		''')
+		pass
 
 	def add_tag_to_file(self,tag):
 		self._cursor.execute(u'''
@@ -440,49 +503,3 @@ class Index(object):
 	
 			self._cursor.execute(q,vals)
 		
-	def _add_hash(self,value,table):
-		# check if the hash is already added
-		# if so return the entries id
-		
-		self._cursor.execute(u"""
-			SELECT 
-				id 
-			FROM 
-				"""+table+u"""
-			WHERE
-				value = %s;
-		""",
-			(value,)
-		)
-		
-		res = self._cursor.fetchone()
-		if res != None:
-			return res[0]
-		
-		# if the hash isn't added yet
-		# add it and return the generated id
-		self._cursor.execute(u"""
-			INSERT INTO """+table+u""" (
-				value
-			) VALUES (
-				%s
-			);
-		""",
-			(value,)
-		)
-
-		return self._db.insert_id()
-
-	def add_md5(self,md5):
-		return self._add_hash(md5,u"md5s")
-	
-	def add_puid(self,puid):
-		if puid == None:
-			return None
-		return self._add_hash(puid,u"puids")
-		
-	def add_fingerprint(self,fingerprint):
-		if fingerprint == None:
-			return None
-		return self._add_hash(fingerprint,u"fingerprints")
-			
