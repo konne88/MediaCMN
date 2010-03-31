@@ -24,15 +24,31 @@ from organizer.mp3file import transform_to_mp3, set_file_id3_tags
 def get_copyfile(files):
 	return files[0]
 
-def copy_file_to_target(filename,copyname,ismp3,song):
-	# create all the directories the file lies in	
-	path = os.path.dirname(filename)
+def _create_path_parts(path):
 	pathParts = path.split('/')
 	usedParts = '/'
 	for p in pathParts:
 		usedParts = os.path.join(usedParts,p)
 		if not os.path.isdir(usedParts):
 			os.mkdir(usedParts)
+
+def create_source_symbols(path,files,copyfile,fullname):
+    # create all the directories the file lies in
+    _create_path_parts(path)
+
+	# create source links
+    for file_ in files:
+	    if file_.get_fullname() == copyfile.get_fullname():
+		    os.symlink(copyfile,os.path.join(path,"copyfile"))
+        else:
+		    os.symlink(copyfile,os.path.join(path,"source"))
+
+    # create fullname link
+    os.symlink(fullname,os.path.join(path,"targetfile"))
+
+def copy_file_to_target(filename,copyname,ismp3,song):
+	# create all the directories the file lies in	
+	_create_path_parts( os.path.dirname(filename) )
 
 	# now actually copy the file
 	if ismp3:
@@ -44,6 +60,17 @@ def copy_file_to_target(filename,copyname,ismp3,song):
 	set_file_id3_tags(filename,song)
 	
 def get_new_filename(song,target,pattern,strict):
+	"""
+	Creates the new relative name for a `song` in the music libarary.
+	`patter` describes how the new name of the file should be created,
+	`strict` will determine what characters are legal in a filename.
+	So why do we pass `target` if we return a relative path?
+	Well we do that so that we can check whether the file already
+	exists and if so we can append it with some cool number.
+	Then why don't we just return the aboslute path. Because then we 
+	can't work that easily with it anymore. For example when creating 
+	the symbolic references.
+	"""
 	#define what s.th. is named if it's empty
 	defaults = {
 		u'track':u"Unknown Track",
@@ -122,15 +149,16 @@ def get_new_filename(song,target,pattern,strict):
 			p = p[0:220]
 	relativename = '/'.join(pathParts)
 	
-	# and finally append the extension and join with the target
+	# and finally append the extension
 	# if files exists already append with a number
+	# return the relative not the absolute path
 	ext = '.mp3'
-	i = 1
+	i = 0
 	fullname = os.path.join(target,relativename+ext)
 	while(True):
 		if os.path.exists(fullname):
-			fullname = os.path.join(target,relativename
-				+u" ("+unicode(i)+")"+ext)
 			i=i+1
+			fullname = os.path.join(target,relativename
+				+u" ("+unicode(i)+")"+ext)	
 		else:
-			return fullname
+			return relativename+u" ("+unicode(i)+")"+ext

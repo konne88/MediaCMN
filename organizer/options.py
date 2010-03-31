@@ -25,6 +25,7 @@ class OrganizerOptions(IndexOptions):
 		self.target = None
 		self.filepattern = '%a/%r/%n-%t'
 		self.restrictions = 0
+		self.debug = False
 		self._appname = "Organizer"
 		
 		self._opts.append(('filepattern','f',"PATTERN",
@@ -41,6 +42,13 @@ class OrganizerOptions(IndexOptions):
 			"%%  is replaced by a '%' character\n"
 			"file extension (.mp3) is added automatically",
 			self.filepattern))
+
+		self._opts.append(('debug','D',None,
+			"if enabled additional files are created to make the library\n
+			"creation process more comprehensible. Those files will generally\n"
+			"take up only a view percent of the librarys total space
+			"consumtion.",
+            self.debug))
 
 		self._opts.append(('restrictions','r',"INTEGER",
 			"sets the restrictions that exist for valid filenames.\n"
@@ -67,6 +75,10 @@ class OrganizerOptions(IndexOptions):
 			if not os.path.isdir(self.target):
 				print "TARGET is not a directory"
 				q = 1
+	        # abort if the target is not an empty directory
+	        if os.listdir(work_path) = []:
+				print "TARGET is not empty"
+				q = 1
 		else:
 			print "You must specify exactly one TARGET for the library to be saved in."
 			q = 1
@@ -83,6 +95,8 @@ class OrganizerOptions(IndexOptions):
 				self.restrictions = v
 		elif opt == 'filepattern':
 			self.filepattern = val
+		elif opt == 'debug':
+			self.debug = True
 		else:
 			r = super(OrganizerOptions,self)._set_option_value(opt,val)
 			if r != None:
