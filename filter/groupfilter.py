@@ -30,40 +30,40 @@ from entries import Tag, MergeFiles
 # file-id that all tags of the dropped file are assinged to.
 
 def filter_unchecked(gs):
-	dfs = []
-	for g in gs:
-		fs = g.files
-		
-		while len(fs) != 1:
-			dfs.append( MergeFiles(fs[0].id,fs[1].id) )
-			del fs[1]
+    dfs = []
+    for g in gs:
+        fs = g.files
+        
+        while len(fs) != 1:
+            dfs.append( MergeFiles(fs[0].id,fs[1].id) )
+            del fs[1]
 
-	return dfs
+    return dfs
 
 def filter_check_groups_using_tags(gs,level):
-	dfs = []
-	
-	# go througth all groups
-	for g in gs:		
-		fs = g.files
-		i = 0
-		# go througth all files in the group (iterator i)
-		while i < len(fs):
-			p = i+1
-			# compare all files, after the current file, (iterator p)
-			# to the current file
-			while p < len(fs):
-				# delete all files that are similar to the current file
-				# because of the deletition we don't need
-				# to increment in the iterator p				
-				eq = tag_similarity(fs[i].tags,fs[p].tags)
-				
-				if eq > level:
-					dfs.append( MergeFiles(fs[i].id,fs[p].id) )
-					del fs[p]
-				else:
-					p+=1	
-			i+=1
-	
-	return dfs
+    dfs = []
+    
+    # go througth all groups
+    for g in gs:        
+        fs = g.files
+        i = 0
+        # go througth all files in the group (iterator i)
+        while i < len(fs):
+            p = i+1
+            # compare all files, after the current file, (iterator p)
+            # to the current file
+            while p < len(fs):
+                # delete all files that are similar to the current file
+                # because of the deletition we don't need
+                # to increment in the iterator p                
+                eq = tag_similarity(fs[i].tags,fs[p].tags)
+                
+                if eq > level:
+                    dfs.append( MergeFiles(fs[i].id,fs[p].id) )
+                    del fs[p]
+                else:
+                    p+=1    
+            i+=1
+    
+    return dfs
 

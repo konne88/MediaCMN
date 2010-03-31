@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import re		#regex
+import re       #regex
 import os.path
 
 from share.entries import FileTag, TagGroup
@@ -27,80 +27,80 @@ from share.entries import FileTag, TagGroup
 # source is where we got the tag
 # use the following value for
 def guess_from_path_and_name(path,name):
-	res = TagGroup(None,None)
+    res = TagGroup(None,None)
 
-	# split with '-' if it exists
-	if name.count('-') > 0:
-		fields = name.split('-')
-		for field in fields:
-			res.tags.append(FileTag(None,field,None,'filename',None))
+    # split with '-' if it exists
+    if name.count('-') > 0:
+        fields = name.split('-')
+        for field in fields:
+            res.tags.append(FileTag(None,field,None,'filename',None))
 
-	# if '-' wasn't a seperator, we check if '_' is seperator
-	# it only is if there are '_' and ' ' combined in the string
-	# cause who would use '_' as ' ' if he uses ' ' too.
-	elif name.count('_') > 0 and name.count(' ') > 0:
-		fields = name.split('_')
-		for field in fields:
-			res.tags.append(FileTag(None,field,None,'filename',None))
+    # if '-' wasn't a seperator, we check if '_' is seperator
+    # it only is if there are '_' and ' ' combined in the string
+    # cause who would use '_' as ' ' if he uses ' ' too.
+    elif name.count('_') > 0 and name.count(' ') > 0:
+        fields = name.split('_')
+        for field in fields:
+            res.tags.append(FileTag(None,field,None,'filename',None))
 
-	# if there is no seperator, we use the full name as track		
-	else:
-		res.tags.append(FileTag(None,name,'track','filename',None))
+    # if there is no seperator, we use the full name as track       
+    else:
+        res.tags.append(FileTag(None,name,'track','filename',None))
 
-	# we mark all the fields that are a number only as 'number'
-	r = re.compile('^\d{1,2}$')
-	for tag in res.tags:
-		if r.sub('',tag.value)=='':
-			tag.type = 'tracknumber'
-			break
+    # we mark all the fields that are a number only as 'number'
+    r = re.compile('^\d{1,2}$')
+    for tag in res.tags:
+        if r.sub('',tag.value)=='':
+            tag.type = 'tracknumber'
+            break
 
-	# now we search for a tracknumber that is most of the times
-	# simply stored, seperated by a ' ' from the trackname
-	# or another field
-	r = re.compile('^\d{1,2}\s')
-	for tag in res.tags:
-		e = r.match(tag.value)
-		if e != None:
-			res.tags.append(FileTag(None,e.group(),'tracknumber','filename',None))
-			tag.value = r.sub('',tag.value)
-			break
+    # now we search for a tracknumber that is most of the times
+    # simply stored, seperated by a ' ' from the trackname
+    # or another field
+    r = re.compile('^\d{1,2}\s')
+    for tag in res.tags:
+        e = r.match(tag.value)
+        if e != None:
+            res.tags.append(FileTag(None,e.group(),'tracknumber','filename',None))
+            tag.value = r.sub('',tag.value)
+            break
 
-	# delete all entries that look like md5 hashes 
-	r = re.compile('^[0-9A-Fa-f]{32}$')
-	i = 0
-	while i < len(res.tags):
-		if r.match(res.tags[i].value) != None:
-			del res.tags[i]
-		else:
-			i = i+1
+    # delete all entries that look like md5 hashes 
+    r = re.compile('^[0-9A-Fa-f]{32}$')
+    i = 0
+    while i < len(res.tags):
+        if r.match(res.tags[i].value) != None:
+            del res.tags[i]
+        else:
+            i = i+1
 
-	# now get tags from the directory name
-	# if there are at least two sub directories, 
-	# the first parent will be the release
-	# and the grandparent will be the artist
-	path, reldir = os.path.split(path)
-	artdir = os.path.basename(path)
-	
-	if reldir != '' and artdir != '':
-		res.tags.append(FileTag(None,reldir,'release','path',None))
-		res.tags.append(FileTag(None,artdir,'artist','path',None))
-	
-	return [res]
-	
+    # now get tags from the directory name
+    # if there are at least two sub directories, 
+    # the first parent will be the release
+    # and the grandparent will be the artist
+    path, reldir = os.path.split(path)
+    artdir = os.path.basename(path)
+    
+    if reldir != '' and artdir != '':
+        res.tags.append(FileTag(None,reldir,'release','path',None))
+        res.tags.append(FileTag(None,artdir,'artist','path',None))
+    
+    return [res]
+    
 if __name__ == "__main__":
-	print "Testing the extraction of tags from a filename."
-	print "-----------------------------------------------"
-	print 
-	s = (["/a/artist/release","01 Meer Sein"],
-	["/artist/release","03-less_than_jake-overrated_(everything_is)"],
-	["/a","13 the song_album"],
-	["/","my_song"],
-	["","10 All We Are"],
-	["","10 kleine Nazis"],
-	["","56251e9680e11aaa39714a4b0cbe7443"],
-	["","abinullacht"])
-	
-	for i in s:
-		print os.path.join(i[0],i[1])
-		print guess_from_path_and_name(i[0],i[1])
-		print
+    print "Testing the extraction of tags from a filename."
+    print "-----------------------------------------------"
+    print 
+    s = (["/a/artist/release","01 Meer Sein"],
+    ["/artist/release","03-less_than_jake-overrated_(everything_is)"],
+    ["/a","13 the song_album"],
+    ["/","my_song"],
+    ["","10 All We Are"],
+    ["","10 kleine Nazis"],
+    ["","56251e9680e11aaa39714a4b0cbe7443"],
+    ["","abinullacht"])
+    
+    for i in s:
+        print os.path.join(i[0],i[1])
+        print guess_from_path_and_name(i[0],i[1])
+        print

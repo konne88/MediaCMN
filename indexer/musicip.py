@@ -38,43 +38,43 @@ def _get_text(nodelist):
 #   [1] puid
 #   [2] a list of tags
 def generate_fingerprint_and_lookup_tags_if_online (fullname):
-	argv = ["cmnfingerprinter",fullname]
-	
-	cmnf = Popen(argv, stdout=PIPE, stderr=PIPE)
-	o = cmnf.communicate()[0]
+    argv = ["cmnfingerprinter",fullname]
+    
+    cmnf = Popen(argv, stdout=PIPE, stderr=PIPE)
+    o = cmnf.communicate()[0]
 
-	fingerprint = None
-	puid = None
-	taggroups = [TagGroup(None,None)]
-	online = False
-	playable = False
-	duration = 0
+    fingerprint = None
+    puid = None
+    taggroups = [TagGroup(None,None)]
+    online = False
+    playable = False
+    duration = 0
 
-	if cmnf.returncode == 0:
-		dom = xml.parseString(o)
-	
-		# parse the first file that was returned
-		props = dom.getElementsByTagName("file")[0].getElementsByTagName("*")
+    if cmnf.returncode == 0:
+        dom = xml.parseString(o)
+    
+        # parse the first file that was returned
+        props = dom.getElementsByTagName("file")[0].getElementsByTagName("*")
 
-		for p in props:
-			name = p.tagName
-			text = _get_text(p.childNodes)
-			if name == "puid":
-				puid = text
-			elif name == "fingerprint":
-				fingerprint = text
-			elif name == "filename":
-				pass
-			elif name == 'online': 
-				if text == 'true':
-					online = True
-			elif name == 'playable':
-				if text == 'true':
-					playable = True
-			elif name == 'duration':
-				duration = int(text)
-			else:
-				taggroups[0].tags.append(FileTag(None,text,name,'musicip',None))
-		
-	return fingerprint,puid,taggroups,online,playable,duration
+        for p in props:
+            name = p.tagName
+            text = _get_text(p.childNodes)
+            if name == "puid":
+                puid = text
+            elif name == "fingerprint":
+                fingerprint = text
+            elif name == "filename":
+                pass
+            elif name == 'online': 
+                if text == 'true':
+                    online = True
+            elif name == 'playable':
+                if text == 'true':
+                    playable = True
+            elif name == 'duration':
+                duration = int(text)
+            else:
+                taggroups[0].tags.append(FileTag(None,text,name,'musicip',None))
+        
+    return fingerprint,puid,taggroups,online,playable,duration
 

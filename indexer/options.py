@@ -19,25 +19,25 @@ from share.options import IndexOptions
 import os.path
 
 class IndexerOptions(IndexOptions):
-	def __init__(self):
-		super(IndexerOptions,self).__init__()
-		self.sources = []
+    def __init__(self):
+        super(IndexerOptions,self).__init__()
+        self.sources = []
 
-		self._appname="Indexer"
-		self._appargs+="[SOURCE...]"
-		self._appdesc=("Index all files that are passed as a SOURCE or\n"
-			"lay in a directory that is passed as a SOURCE\n"
-			"the index is saved in a mysql database")
+        self._appname="Indexer"
+        self._appargs+="[SOURCE...]"
+        self._appdesc=("Index all files that are passed as a SOURCE or\n"
+            "lay in a directory that is passed as a SOURCE\n"
+            "the index is saved in a mysql database")
 
-	def _handle_unused_args(self,args):
-		for a in args:
-			self.sources.append(os.path.abspath(a))
-		return None
-		
-	def _set_option_value(self,opt,val):
-		q = None
-		r = super(IndexerOptions,self)._set_option_value(opt,val)
-		if r != None:
-			q = r
-		return q
+    def _handle_unused_args(self,args):
+        for a in args:
+            self.sources.append(os.path.abspath(a))
+        return None
+        
+    def _set_option_value(self,opt,val):
+        q = None
+        r = super(IndexerOptions,self)._set_option_value(opt,val)
+        if r != None:
+            q = r
+        return q
 

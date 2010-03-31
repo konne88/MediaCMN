@@ -16,22 +16,22 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 class Song(object):
-	def __init__(self,id_,copyid,sources):
-		self.id = id_
-		self.copyid = copyid
-		self.sources = sources
-		self.duration = None
-		self.artist = None
-		self.release = None
-		self.track = None
-		self.date = None
-		self.tracknumber = None
-		self.genre = None
-		self.label = None
-		self.musictype = 'other'
+    def __init__(self,id_,copyid,sources):
+        self.id = id_
+        self.copyid = copyid
+        self.sources = sources
+        self.duration = None
+        self.artist = None
+        self.release = None
+        self.track = None
+        self.date = None
+        self.tracknumber = None
+        self.genre = None
+        self.label = None
+        self.musictype = 'other'
 
-	def __repr__(self):
-		return str((self.duration,self.artist,self.release,self.track,
+    def __repr__(self):
+        return str((self.duration,self.artist,self.release,self.track,
                             self.date,self.tracknumber,self.genre,self.label,
                             self.musictype))
 

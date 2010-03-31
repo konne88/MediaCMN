@@ -30,116 +30,116 @@ import share.index as index
 from share.entries import IndexedFile
 
 def calc_md5_and_size(fullname):
-	# python strings may include NUL bytes!!!
-	# http://www.velocityreviews.com/forums/t357410-md5-from-python-different-then-md5-from-command-line.html
-	f= open(fullname,mode='rb')
-	d = f.read()
-	size = len(d)
+    # python strings may include NUL bytes!!!
+    # http://www.velocityreviews.com/forums/t357410-md5-from-python-different-then-md5-from-command-line.html
+    f= open(fullname,mode='rb')
+    d = f.read()
+    size = len(d)
 
-	return hashlib.md5(d).hexdigest(), size
+    return hashlib.md5(d).hexdigest(), size
 
 def is_file_mp3(fullname):
-	argv = [u"file",u"-b",fullname]
-	finfo = Popen(argv, stdout=PIPE).communicate()[0]
+    argv = [u"file",u"-b",fullname]
+    finfo = Popen(argv, stdout=PIPE).communicate()[0]
 
-	return finfo.find(u"MP3 encoding") != -1 or finfo.find(u"MPEG ADTS") != -1
+    return finfo.find(u"MP3 encoding") != -1 or finfo.find(u"MPEG ADTS") != -1
 
 def parse_file(db,fullname,path,filename,count):
-	print "Indexing file '%s'" % filename
-	print '\tPath:',path
-	print '\tTime:',datetime.now().strftime("%H:%M:%S")
-	
-	name, ext = os.path.splitext(filename)
-	
-	if db.is_file_added(path,name,ext):
-		print "Already added to the database."
-		return count	#count isn't incremented
-	
-	# calc the values
-	md5hash, size        = calc_md5_and_size(fullname)
-	fingerprint,puid,taggroups,online,playable,duration = musicip.generate_fingerprint_and_lookup_tags_if_online(fullname)
-	taggroups.extend(filetags.guess_from_path_and_name(path,name))
-	taggroups.extend(metatags.get_from_file(fullname,ext))
-	musictype = None
-	if playable:
-		if is_file_mp3(fullname):
-			musictype = 'mp3'
-		else:
-			musictype = 'other'
-	
-	# print what we found
-	print '\tPlay:',playable
-	print '\tType:',musictype
-	print '\tOnln:',online
-	print '\tSize:',size/1024/1024,"mb"
-	print '\tMd5 :',md5hash
-	print '\tLen :',duration,'ms'
-	if fingerprint!=None:
-		print '\tPrnt:',fingerprint[:25]+"..."+fingerprint[-25:]
-	if puid!=None:
-		print '\tPUID:',puid
-	print '\tTags:',taggroups
+    print "Indexing file '%s'" % filename
+    print '\tPath:',path
+    print '\tTime:',datetime.now().strftime("%H:%M:%S")
+    
+    name, ext = os.path.splitext(filename)
+    
+    if db.is_file_added(path,name,ext):
+        print "Already added to the database."
+        return count    #count isn't incremented
+    
+    # calc the values
+    md5hash, size        = calc_md5_and_size(fullname)
+    fingerprint,puid,taggroups,online,playable,duration = musicip.generate_fingerprint_and_lookup_tags_if_online(fullname)
+    taggroups.extend(filetags.guess_from_path_and_name(path,name))
+    taggroups.extend(metatags.get_from_file(fullname,ext))
+    musictype = None
+    if playable:
+        if is_file_mp3(fullname):
+            musictype = 'mp3'
+        else:
+            musictype = 'other'
+    
+    # print what we found
+    print '\tPlay:',playable
+    print '\tType:',musictype
+    print '\tOnln:',online
+    print '\tSize:',size/1024/1024,"mb"
+    print '\tMd5 :',md5hash
+    print '\tLen :',duration,'ms'
+    if fingerprint!=None:
+        print '\tPrnt:',fingerprint[:25]+"..."+fingerprint[-25:]
+    if puid!=None:
+        print '\tPUID:',puid
+    print '\tTags:',taggroups
 
-	# add values to db
-	md5id         = db.add_md5(md5hash)
-	puidid        = db.add_puid(puid)
-	fingerprintid = db.add_fingerprint(fingerprint)
-	
-	f = IndexedFile(None,path,name,ext)
-	f.flags['size'] = size
-	f.flags['puidid'] = puidid
-	f.flags['md5id'] = md5id
-	f.flags['fingerprintid'] = fingerprintid
-	f.flags['musictype'] = musictype
-	f.flags['musicip_online'] = online
-	f.flags['duration'] = duration
-	f.taggroups = taggroups
-	db.add_file(f)
-	
-	count+=1
-	print 'Added succesfully with id %s.'%str(count)
-	opts.print_sep()
-	return count
+    # add values to db
+    md5id         = db.add_md5(md5hash)
+    puidid        = db.add_puid(puid)
+    fingerprintid = db.add_fingerprint(fingerprint)
+    
+    f = IndexedFile(None,path,name,ext)
+    f.flags['size'] = size
+    f.flags['puidid'] = puidid
+    f.flags['md5id'] = md5id
+    f.flags['fingerprintid'] = fingerprintid
+    f.flags['musictype'] = musictype
+    f.flags['musicip_online'] = online
+    f.flags['duration'] = duration
+    f.taggroups = taggroups
+    db.add_file(f)
+    
+    count+=1
+    print 'Added succesfully with id %s.'%str(count)
+    opts.print_sep()
+    return count
 
 def examen_dir(db,dirname,count):
-	for filename in os.listdir(dirname):
-		fullname = os.path.join(dirname, filename)
-		if os.path.isfile(fullname):
-			count = parse_file(db,fullname,dirname,filename,count)			
-		else:
-			count = examen_dir(db,fullname,count)
+    for filename in os.listdir(dirname):
+        fullname = os.path.join(dirname, filename)
+        if os.path.isfile(fullname):
+            count = parse_file(db,fullname,dirname,filename,count)          
+        else:
+            count = examen_dir(db,fullname,count)
 
-	return count
+    return count
 
 def main(opts):
-	try:
-		opts.print_init()
+    try:
+        opts.print_init()
 
-		if opts.drop:
-			print "Dropping tables"
-			index.Index.drop_content(opts.index_reference)
-			opts.print_sep()
-		db = index.Index(opts.index_reference)
+        if opts.drop:
+            print "Dropping tables"
+            index.Index.drop_content(opts.index_reference)
+            opts.print_sep()
+        db = index.Index(opts.index_reference)
 
-		print "Creating tables"
-		db.create_tables()
-		opts.print_sep()
+        print "Creating tables"
+        db.create_tables()
+        opts.print_sep()
 
-		count = 0
-		for s in opts.sources:
-			if os.path.isfile(s):
-				filename = os.path.split(s)
-				count = parse_file(db,s,filename[0],filename[1],count)
-			else:
-				count = examen_dir(db,s,count)
-		
-		opts.print_done()
+        count = 0
+        for s in opts.sources:
+            if os.path.isfile(s):
+                filename = os.path.split(s)
+                count = parse_file(db,s,filename[0],filename[1],count)
+            else:
+                count = examen_dir(db,s,count)
+        
+        opts.print_done()
 
-	except KeyboardInterrupt:
-		opts.print_terminated()
+    except KeyboardInterrupt:
+        opts.print_terminated()
 
 if __name__ == "__main__":
-	opts = options.IndexerOptions()
-	opts.parse_cmdline_arguments(sys.argv)
-	main(opts)
-	
+    opts = options.IndexerOptions()
+    opts.parse_cmdline_arguments(sys.argv)
+    main(opts)
+    

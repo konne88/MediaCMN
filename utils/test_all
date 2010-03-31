@@ -54,4 +54,8 @@ echo
 echo " *** RUNNING THE ORGANIZER *** "
 echo
 #./cmnorganizer.py -p $2 -f "%t-%r-%a-%n-%d--%%-" -i test_index $3
-./cmnorganizer.py -i $2 $3
+# remove the old library files
+echo "rm -r -I "$3
+rm -r -I $3
+mkdir $3
+./cmnorganizer.py -D -i $2 $3

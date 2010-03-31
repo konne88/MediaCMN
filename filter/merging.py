@@ -104,135 +104,135 @@ from entries import Song
 from tagcomp import tag_group_similarity,find_best_tag_group
 
 class MergeFile(object):
-	"""Object holding all information needed to create a song
-	Is basically a conclumeration of multiple, similar, files.
-	"""
+    """Object holding all information needed to create a song
+    Is basically a conclumeration of multiple, similar, files.
+    """
 
-	def __init__(self,file_ = None):
-		"""Constructs the conclumeration and is adding the optional `file_`"""
-		self.taggroups = []
-		self.sourcefiles = []
-		self.flags = {}
-		if file_ != None:
-			self.add_source(file_)
+    def __init__(self,file_ = None):
+        """Constructs the conclumeration and is adding the optional `file_`"""
+        self.taggroups = []
+        self.sourcefiles = []
+        self.flags = {}
+        if file_ != None:
+            self.add_source(file_)
 
-	def add_source(self,file_):
-		"""Adds a source `file_` to the merge."""
-		self.sourcefiles.append(file_.id)
-		self.taggroups.extend(file_.taggroups)
-		self.flags = file_.flags
+    def add_source(self,file_):
+        """Adds a source `file_` to the merge."""
+        self.sourcefiles.append(file_.id)
+        self.taggroups.extend(file_.taggroups)
+        self.flags = file_.flags
 
-	def to_song(self):
-		"""Creates a `Song` out of the data stored in itsself."""
-		song = Song(None,self.sourcefiles[0],self.sourcefiles)
-		song.duration = 1337
-		song.musictype = 'other'
+    def to_song(self):
+        """Creates a `Song` out of the data stored in itsself."""
+        song = Song(None,self.sourcefiles[0],self.sourcefiles)
+        song.duration = 1337
+        song.musictype = 'other'
 
-		# best tag group
-		btg = find_best_tag_group(self.taggroups,0)
+        # best tag group
+        btg = find_best_tag_group(self.taggroups,0)
 
-		for tag in btg.tags:
-			if tag.type==u'artist':
-				song.artist = tag.value
-			elif tag.type==u'release':
-				song.release = tag.value
-			elif tag.type==u'track':
-				song.track = tag.value
-			elif tag.type==u'date':
-				song.date = tag.value
-			elif tag.type==u'tracknumber':
-				song.tracknumber = tag.value
-			elif tag.type==u'genre':
-				song.genre = tag.value
-			elif tag.type==u'label':
-				song.label = tag.value
+        for tag in btg.tags:
+            if tag.type==u'artist':
+                song.artist = tag.value
+            elif tag.type==u'release':
+                song.release = tag.value
+            elif tag.type==u'track':
+                song.track = tag.value
+            elif tag.type==u'date':
+                song.date = tag.value
+            elif tag.type==u'tracknumber':
+                song.tracknumber = tag.value
+            elif tag.type==u'genre':
+                song.genre = tag.value
+            elif tag.type==u'label':
+                song.label = tag.value
 
-		return song
+        return song
 
-	def merge_with_mergefile(self,mf):
-		"""Merges this mergefile with another one called `mf`."""
-		if self.flags != mf.flags:
-			print "*********************************************************"
-			print "*********************************************************"
-			print
-			print "ALERT! YOU ARE ABOUT TO ADD FILES WITH VERYING FLAGS!!!"
-			print
-			print "*********************************************************"
-			print "*********************************************************"
-		self.sourcefiles.extend(mf.sourcefiles)
-		self.taggroups.extend(mf.taggroups)
+    def merge_with_mergefile(self,mf):
+        """Merges this mergefile with another one called `mf`."""
+        if self.flags != mf.flags:
+            print "*********************************************************"
+            print "*********************************************************"
+            print
+            print "ALERT! YOU ARE ABOUT TO ADD FILES WITH VERYING FLAGS!!!"
+            print
+            print "*********************************************************"
+            print "*********************************************************"
+        self.sourcefiles.extend(mf.sourcefiles)
+        self.taggroups.extend(mf.taggroups)
 
-	def __repr__(self):
-		return str(self.taggroups)
+    def __repr__(self):
+        return str(self.taggroups)
 
 def find_tagwise_similar_files(mf,mfs,level):
-	"""
-	Merge one mergefile with all other mergefiles sharing a flag.
-	Finds files similar to the passed `mf`.
-	`mfs` is a list of all files that will be compared to the tags of `mf`.
-	If the similarity of the tags is > level, they count as similar.
-	Return a tupple containing a list of similar files and a list of
-	unsimilar files.
-	The similar files will include `mf` for sure
-	"""
-	# this algorythm moves all similar entries from the mfs to the similar list
-	similar = []
-	for s in similar:
-		for i in xrange(len(mfs)):
-			# We can not use those groups of tags that were downloaded from the
-			# internet since that would manipulate our result.
-			# E.g. all files with identical puids would match 100% since
-			# musicbrainz gives them all exactly the same result
-			if tag_group_similarity(s.taggroups,mfs[i].taggroups, ('musicbrainz','musicdns')) > level:
-				similar.append(mfs[i])
-				del mfs[i]
-	return similar,mfs
+    """
+    Merge one mergefile with all other mergefiles sharing a flag.
+    Finds files similar to the passed `mf`.
+    `mfs` is a list of all files that will be compared to the tags of `mf`.
+    If the similarity of the tags is > level, they count as similar.
+    Return a tupple containing a list of similar files and a list of
+    unsimilar files.
+    The similar files will include `mf` for sure
+    """
+    # this algorythm moves all similar entries from the mfs to the similar list
+    similar = []
+    for s in similar:
+        for i in xrange(len(mfs)):
+            # We can not use those groups of tags that were downloaded from the
+            # internet since that would manipulate our result.
+            # E.g. all files with identical puids would match 100% since
+            # musicbrainz gives them all exactly the same result
+            if tag_group_similarity(s.taggroups,mfs[i].taggroups, ('musicbrainz','musicdns')) > level:
+                similar.append(mfs[i])
+                del mfs[i]
+    return similar,mfs
 
 def merge_files_by_similar_tags(mfs,level):
-	"""
-	Merge all mergefiles sharing a flag.
-	Creates a list of `MergeFile`s. In this new list all elements
-	of the `MergeFile` list `mfs` were merged.
-	"""
-	result = []
-	while len(mfs)>0:
-		mf = mfs[0]
-		del mfs[0]
-		similar,mfs = find_tagwise_similar_files(mf,mfs,level)
-		for s in similar:
-			mf.merge_with_mergefile(s)
-		result.append(mf)
-	return result
+    """
+    Merge all mergefiles sharing a flag.
+    Creates a list of `MergeFile`s. In this new list all elements
+    of the `MergeFile` list `mfs` were merged.
+    """
+    result = []
+    while len(mfs)>0:
+        mf = mfs[0]
+        del mfs[0]
+        similar,mfs = find_tagwise_similar_files(mf,mfs,level)
+        for s in similar:
+            mf.merge_with_mergefile(s)
+        result.append(mf)
+    return result
 
 def merge_files_by_flag_and_tags(mfs,level,flag):
-	"""
-	Merge all mergefiles.
-	Merge all files that have the same `flag` and similar tags.
-	`mfs` represents all files that need to be merged.
-	Returns a new list of mergefiles, holding all possible merges
-	"""
-	if len(mfs)==0:
-		return []
-	else:
-		mfs.sort(lambda a,b : int(a.flags[flag]-b.flags[flag]))
-		mergefile = mfs[0]
-		result = []
-		group = [mergefile]
-		flagval = mfs[0].flags[flag]
-		for mf in mfs[1:]:
-			if flagval != mf.flags[flag]:
-				# a group just ended here. Check for similarity
-				result.extend(merge_files_by_similar_tags(group,level))
-				# a new group starts here
-				mergefile = mf
-				group = [mergefile]
-				flagval = mf.flags[flag]
-			else:
-				group.append(mf)
+    """
+    Merge all mergefiles.
+    Merge all files that have the same `flag` and similar tags.
+    `mfs` represents all files that need to be merged.
+    Returns a new list of mergefiles, holding all possible merges
+    """
+    if len(mfs)==0:
+        return []
+    else:
+        mfs.sort(lambda a,b : int(a.flags[flag]-b.flags[flag]))
+        mergefile = mfs[0]
+        result = []
+        group = [mergefile]
+        flagval = mfs[0].flags[flag]
+        for mf in mfs[1:]:
+            if flagval != mf.flags[flag]:
+                # a group just ended here. Check for similarity
+                result.extend(merge_files_by_similar_tags(group,level))
+                # a new group starts here
+                mergefile = mf
+                group = [mergefile]
+                flagval = mf.flags[flag]
+            else:
+                group.append(mf)
 
-		# here ends the very last group
-		result.extend(merge_files_by_similar_tags(group,level))
-	return result
+        # here ends the very last group
+        result.extend(merge_files_by_similar_tags(group,level))
+    return result
 
 def merge_files_by_md5(mfs):
         """
@@ -252,52 +252,52 @@ def merge_files_by_md5(mfs):
                                 mergefile = mf
                                 result.append(mergefile)
                                 md5 = mf.flags['md5id']
-			else:
-		                mergefile.merge_with_mergefile(mf)
+                        else:
+                            mergefile.merge_with_mergefile(mf)
         return result
 
-def _recursive_property_merge(songs,filters):	
-	if len(songs) <= 1: 
-		return songs
+def _recursive_property_merge(songs,filters):   
+    if len(songs) <= 1: 
+        return songs
 
-	# no filter left, everything that is still the same, must be merged	
-	if len(filters) == 0:
-		for s in songs[1:]:
-			songs[0].sources.extend(s.sources)
-		return songs[0:1]
+    # no filter left, everything that is still the same, must be merged 
+    if len(filters) == 0:
+        for s in songs[1:]:
+            songs[0].sources.extend(s.sources)
+        return songs[0:1]
 
-	filt = filters[0]
-	filts = filters[1:]
+    filt = filters[0]
+    filts = filters[1:]
 
-	songs.sort(filt)
+    songs.sort(filt)
 
-	ret = []
-	oldsong = songs[0]
-	same = [oldsong]
-	for s in songs[1:]:
-		if filt(oldsong,s) == 0:	# they are the same
-			same.append(s)
-		else:
-			ret.extend( _recursive_property_merge(same,filts) )
-			oldsong = s
-			same = [oldsong]
-	
-	ret.extend( _recursive_property_merge(same,filts) )	# merge the last matches
+    ret = []
+    oldsong = songs[0]
+    same = [oldsong]
+    for s in songs[1:]:
+        if filt(oldsong,s) == 0:    # they are the same
+            same.append(s)
+        else:
+            ret.extend( _recursive_property_merge(same,filts) )
+            oldsong = s
+            same = [oldsong]
+    
+    ret.extend( _recursive_property_merge(same,filts) ) # merge the last matches
 
-	return ret
+    return ret
 
 def merge_songs_by_properties(songs):
-	"""
-	Merges passed `songs` by comparing their properties. If they are the same
-	they will be merged into one song.
-	"""
+    """
+    Merges passed `songs` by comparing their properties. If they are the same
+    they will be merged into one song.
+    """
 
-	filters = [ lambda a,b : cmp(a.track,b.track),
+    filters = [ lambda a,b : cmp(a.track,b.track),
                     lambda a,b : cmp(a.release,b.release),
                     lambda a,b : cmp(a.artist,b.artist),
                     lambda a,b : cmp(a.date,b.date),
                     lambda a,b : cmp(a.tracknumber,b.tracknumber),
                     lambda a,b : cmp(a.label,b.label),
                     lambda a,b : cmp(a.release,b.release) ]
-	
-	return _recursive_property_merge(songs,filters)
+    
+    return _recursive_property_merge(songs,filters)

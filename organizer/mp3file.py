@@ -28,44 +28,44 @@ import mutagen.easyid3 as easyid3
 # http://docs.python.org/library/subprocess.html#subprocess.PIPE
 
 def transform_to_mp3(copyname,fullname):
-	argv = [u"ffmpeg",u"-i",copyname,u'-ab',u'256k',fullname]
-	Popen(argv, stdout=PIPE,stderr=PIPE).communicate()
+    argv = [u"ffmpeg",u"-i",copyname,u'-ab',u'256k',fullname]
+    Popen(argv, stdout=PIPE,stderr=PIPE).communicate()
 
 def set_file_id3_tags(fullname,song):
-	# delete the old version tags
-	easyid3.delete(fullname, delete_v1=True, delete_v2=True)
+    # delete the old version tags
+    easyid3.delete(fullname, delete_v1=True, delete_v2=True)
 
-	infos = {
-		u'track':None,
-		u'release':None,
-		u'artist':None,
-		u'tracknumber':None,
-		u'date':None,
-		u'genre':None
-	}
+    infos = {
+        u'track':None,
+        u'release':None,
+        u'artist':None,
+        u'tracknumber':None,
+        u'date':None,
+        u'genre':None
+    }
 
-	# fill the infos structure with information about the song
-	for k in infos:
-		attr = getattr(song, k)
-		infos[k] = attr
-	
-	mapping = {
-		u'track':u'title',
-		u'release':u'album',
-		u'artist':u'artist',
-		u'tracknumber':u'tracknumber',
-		u'genre':u'genre',
-		u'date':u'date'
-	}
-	
-	# set the mp3 metatags
-	meta = EasyID3()
-	
-	for k in infos:
-		try:
-			if infos[k] != None:
-				meta[mapping[k]] = infos[k]
-		except KeyError:
-			pass
+    # fill the infos structure with information about the song
+    for k in infos:
+        attr = getattr(song, k)
+        infos[k] = attr
+    
+    mapping = {
+        u'track':u'title',
+        u'release':u'album',
+        u'artist':u'artist',
+        u'tracknumber':u'tracknumber',
+        u'genre':u'genre',
+        u'date':u'date'
+    }
+    
+    # set the mp3 metatags
+    meta = EasyID3()
+    
+    for k in infos:
+        try:
+            if infos[k] != None:
+                meta[mapping[k]] = infos[k]
+        except KeyError:
+            pass
 
-	meta.save(fullname,v1=2)
+    meta.save(fullname,v1=2)

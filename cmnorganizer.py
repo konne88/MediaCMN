@@ -24,19 +24,19 @@ import shutil
 import organizer.index as index
 import organizer.options as options
 from organizer.file import get_new_filename,    \
-			   get_copyfile,    \
-			   copy_file_to_target,  \
+               get_copyfile,    \
+               copy_file_to_target,  \
                create_source_symbols
 
 def check_sources(files):
-	# print sources
-	for f in files:
-		print "\tSource    :",f
-		if not os.path.exists(f.get_fullname()):
-			print "Source doesn't exist"
-			return False
-	return True
-	
+    # print sources
+    for f in files:
+        print "\tSource    :",f
+        if not os.path.exists(f.get_fullname()):
+            print "Source doesn't exist"
+            return False
+    return True
+    
 def main(opts):
     try:
         opts.print_init()
@@ -50,43 +50,43 @@ def main(opts):
             libtarget = opts.target
 
         for id_ in ids:
-	        print u"Organizing file",id_,u":"
-	        song,files = db.get_song_with_sourcefiles(id_)
-	        if check_sources(files):
-		        # generate new filename
-		        relativename = get_new_filename(song, libtarget,
-			        opts.filepattern, opts.restrictions)
-		        if relativename == None:
-			        print "Generation of a new filename failed."
-		        else:
+            print u"Organizing file",id_,u":"
+            song,files = db.get_song_with_sourcefiles(id_)
+            if check_sources(files):
+                # generate new filename
+                relativename = get_new_filename(song, libtarget,
+                    opts.filepattern, opts.restrictions)
+                if relativename == None:
+                    print "Generation of a new filename failed."
+                else:
                     filename = os.path.join(libtarget,relativename)
-			        # find the source to copy from
-			        copyfile = get_copyfile(files)
-			        copyname = copyfile.get_fullname()
-			        print "\tCopyfile  :",copyfile
-			        print "\tTargetfile:",filename
-			        # copy and do all file transformations
-			        ismp3 = copyfile.flags['musictype'] == 'mp3'
-			        if ismp3 == False:
-				        print "\tNeeds to be converted to mp3."
-			        copy_file_to_target(filename,copyname,ismp3,song)
-			        # if enabled, also create a directory
-			        # containing symbolic links to all sources
-			        if opts.debug:
+                    # find the source to copy from
+                    copyfile = get_copyfile(files)
+                    copyname = copyfile.get_fullname()
+                    print "\tCopyfile  :",copyfile
+                    print "\tTargetfile:",filename
+                    # copy and do all file transformations
+                    ismp3 = copyfile.flags['musictype'] == 'mp3'
+                    if ismp3 == False:
+                        print "\tNeeds to be converted to mp3."
+                    copy_file_to_target(filename,copyname,ismp3,song)
+                    # if enabled, also create a directory
+                    # containing symbolic links to all sources
+                    if opts.debug:
                         # the new files actually lie in the directory with the name of the
                         # new file in the library. So the directory will actually end
                         # with the ending .mp3 or something like that
                         path = os.path.join(os.path.join(opts.target,"debug"),
                             relativename)
-                        create_source_symbols(path,files,copyfile,fullname)
-			opts.print_sep()
+                        create_source_symbols(path,files,copyfile,filename)
+            opts.print_sep()
 
-		opts.print_done()
-	except KeyboardInterrupt:
-		opts.print_terminated()
+        opts.print_done()
+    except KeyboardInterrupt:
+        opts.print_terminated()
 
 if __name__ == "__main__":
-	opts = options.OrganizerOptions()
-	opts.parse_cmdline_arguments(sys.argv)
-	main(opts)
+    opts = options.OrganizerOptions()
+    opts.parse_cmdline_arguments(sys.argv)
+    main(opts)
 

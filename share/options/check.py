@@ -16,21 +16,21 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 def make_float_between_zero_and_one(v):
-	try:
-		l = float(v)
-		if 0<=l and l<=1:
-			return l
-		else:
-			return None
-	except:
-		return None
+    try:
+        l = float(v)
+        if 0<=l and l<=1:
+            return l
+        else:
+            return None
+    except:
+        return None
 
 def make_positive_int(v):
-	try:
-		r = int(v)
-		if r < 0:
-			return None
-		return r
-	except:
-		return None
+    try:
+        r = int(v)
+        if r < 0:
+            return None
+        return r
+    except:
+        return None
 

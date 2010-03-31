@@ -30,41 +30,41 @@ from share.entries import FileTag, TagGroup
 _lastServerCall = 0
 
 def get_puid_tags(puid):
-	"""Returns a list of `TagGroup` elements, matching the song's puid"""
-	
-	global _lastServerCall
-	# wait at least a second
-	while True:
-		currentTime = time.time()
-		if currentTime >= _lastServerCall+1:
-			_lastServerCall = currentTime
-			break
-		time.sleep(0.05)
+    """Returns a list of `TagGroup` elements, matching the song's puid"""
+    
+    global _lastServerCall
+    # wait at least a second
+    while True:
+        currentTime = time.time()
+        if currentTime >= _lastServerCall+1:
+            _lastServerCall = currentTime
+            break
+        time.sleep(0.05)
 
-	q = Query()
-	res = []
-	try:
-		f = TrackFilter(puid=puid)
-		results = q.getTracks(f)
-	except WebServiceError, e:
-		print e
-		return None
-		
-	for result in results:
-		track = result.track
-		artist = track.artist
-		
-		# for all releases in the track add a new set of tags
-		# to the result. this way we don't choose the wrong one		
-		rels = track.releases
-		for release in rels:
-			tg = TagGroup(None,None)
-			tg.tags.append( FileTag(None,track.title,'track','musicbrainz',None) )
-			tg.tags.append( FileTag(None,artist.name,'artist','musicbrainz',None) )
-			tg.tags.append( FileTag(None,unicode(track.duration),'duration','musicbrainz',None) )
-			tg.tags.append( FileTag(None,release.title,'release','musicbrainz',None) )
-			tg.tags.append( FileTag(None,unicode(release.tracksOffset),'tracknumber','musicbrainz',None) )
-			res.append(tg)
+    q = Query()
+    res = []
+    try:
+        f = TrackFilter(puid=puid)
+        results = q.getTracks(f)
+    except WebServiceError, e:
+        print e
+        return None
+        
+    for result in results:
+        track = result.track
+        artist = track.artist
+        
+        # for all releases in the track add a new set of tags
+        # to the result. this way we don't choose the wrong one     
+        rels = track.releases
+        for release in rels:
+            tg = TagGroup(None,None)
+            tg.tags.append( FileTag(None,track.title,'track','musicbrainz',None) )
+            tg.tags.append( FileTag(None,artist.name,'artist','musicbrainz',None) )
+            tg.tags.append( FileTag(None,unicode(track.duration),'duration','musicbrainz',None) )
+            tg.tags.append( FileTag(None,release.title,'release','musicbrainz',None) )
+            tg.tags.append( FileTag(None,unicode(release.tracksOffset),'tracknumber','musicbrainz',None) )
+            res.append(tg)
 
-	return res
+    return res
 

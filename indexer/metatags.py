@@ -29,95 +29,95 @@ from share.entries import FileTag, TagGroup
 # http://svn.sacredchao.net/svn/quodlibet/trunk/mutagen/TUTORIAL
 
 def get_from_file(fullname,metaExt):
-	metaExt = metaExt.lower()
-	trans = []
-	meta = None
-	
-	#try:
-	argv = [u"file",fullname]
-	# the file cmd prints the filename and adds the filetype after a ':'
-	# we use rsplit since filename may contain a :
-	res = Popen(argv, stdout=PIPE).communicate()[0].rsplit(':',1)
-	
-	if len(res) != 2:
-		return []
-	
-	fileType = res[1]
+    metaExt = metaExt.lower()
+    trans = []
+    meta = None
+    
+    #try:
+    argv = [u"file",fullname]
+    # the file cmd prints the filename and adds the filetype after a ':'
+    # we use rsplit since filename may contain a :
+    res = Popen(argv, stdout=PIPE).communicate()[0].rsplit(':',1)
+    
+    if len(res) != 2:
+        return []
+    
+    fileType = res[1]
 
-	if fileType.find("ID3") != -1:
-		metaExt = ".mp3"
-	elif fileType.find("ASF") != -1:
-		metaExt = ".wma"
+    if fileType.find("ID3") != -1:
+        metaExt = ".mp3"
+    elif fileType.find("ASF") != -1:
+        metaExt = ".wma"
 
-	#id3
-	if metaExt in (".tta",".mp3",".mp2"):
-		try:
-			meta = MP3(fullname)
-		except InvalidMPEGHeader:
-			meta = {}
-		except HeaderNotFoundError:
-			meta = {}
-		# http://www.id3.org/id3v2.4.0-frames
-		trans = {
-		'TPE1': u'artist',
-	    'TPE2': u'artist',
-	    'TCON': u'genre',
-	    'TALB': u'release',
-	    'TIT2': u'track',
-	    'TDRC': u'date',
-	    'TRCK': u'tracknumber',
-	    'TPUB': u'label'}
-	
-	#asf
-	elif metaExt in (".wma",):
-		try:
- 			meta = ASF(fullname)
- 		except ASFHeaderError:
-			meta = {}
- 		trans = {
-		'WM/Year'        : u'date',
-		'Author'         : u'artist',
-		'WM/AlbumArtist' : u'artist',
-		'WM/AlbumTitle'  : u'release',
-		'WM/TrackNumber' : u'tracknumber',
-		'Title'          : u'track',
-		'WM/Publisher'   : u'label',
-		'WM/Genre'       : u'genre'}
- 		
-	#apev2 not yet implemented
-	if metaExt in (".mpc", ".mp+",".wv",".ofr", ".ofs",".ape",".tak"):
-		pass
-  	#mp4 not yet implemented
-  	elif metaExt in (".m4a",".m4b",".m4p",".mp4"):
-		pass
- 	#vobis not yet implemented
-	elif metaExt in (".flac",".oggflac",".spx",".oggtheora",".ogg"):
-		pass
+    #id3
+    if metaExt in (".tta",".mp3",".mp2"):
+        try:
+            meta = MP3(fullname)
+        except InvalidMPEGHeader:
+            meta = {}
+        except HeaderNotFoundError:
+            meta = {}
+        # http://www.id3.org/id3v2.4.0-frames
+        trans = {
+        'TPE1': u'artist',
+        'TPE2': u'artist',
+        'TCON': u'genre',
+        'TALB': u'release',
+        'TIT2': u'track',
+        'TDRC': u'date',
+        'TRCK': u'tracknumber',
+        'TPUB': u'label'}
+    
+    #asf
+    elif metaExt in (".wma",):
+        try:
+            meta = ASF(fullname)
+        except ASFHeaderError:
+            meta = {}
+        trans = {
+        'WM/Year'        : u'date',
+        'Author'         : u'artist',
+        'WM/AlbumArtist' : u'artist',
+        'WM/AlbumTitle'  : u'release',
+        'WM/TrackNumber' : u'tracknumber',
+        'Title'          : u'track',
+        'WM/Publisher'   : u'label',
+        'WM/Genre'       : u'genre'}
+        
+    #apev2 not yet implemented
+    if metaExt in (".mpc", ".mp+",".wv",".ofr", ".ofs",".ape",".tak"):
+        pass
+    #mp4 not yet implemented
+    elif metaExt in (".m4a",".m4b",".m4p",".mp4"):
+        pass
+    #vobis not yet implemented
+    elif metaExt in (".flac",".oggflac",".spx",".oggtheora",".ogg"):
+        pass
 
-	taggroup = TagGroup(None,None)
+    taggroup = TagGroup(None,None)
 
-	for t in trans:
-		try:
-			d = unicode(meta[t][0])
-			taggroup.tags.append( FileTag(None,d,trans[t],'metadata',None) )
-		except KeyError:  # this tag doesn't exist in the file
-			pass
-	
-	return [taggroup]
-	
+    for t in trans:
+        try:
+            d = unicode(meta[t][0])
+            taggroup.tags.append( FileTag(None,d,trans[t],'metadata',None) )
+        except KeyError:  # this tag doesn't exist in the file
+            pass
+    
+    return [taggroup]
+    
 if __name__ == "__main__":
-	s= [
-	["Benzin.mp3",".mp3"],
-	["10 All We Are.wma",".wma"]]
-	
-	print "Testing the extraction of tags from file metadata."
-	print "Place the following files into the src directory"
-	for i in s:
-		print s[0]
-	print "--------------------------------------------------"
-	print 
-	
-	for i in s:
-		print i
-		print get_from_file_metadata(i[0],i[1])
-		print
+    s= [
+    ["Benzin.mp3",".mp3"],
+    ["10 All We Are.wma",".wma"]]
+    
+    print "Testing the extraction of tags from file metadata."
+    print "Place the following files into the src directory"
+    for i in s:
+        print s[0]
+    print "--------------------------------------------------"
+    print 
+    
+    for i in s:
+        print i
+        print get_from_file_metadata(i[0],i[1])
+        print
