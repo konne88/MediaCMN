@@ -15,15 +15,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-from share.options import CopyIndexOptions
+from share.options import CommonCmnOptions
 from share.options import check
 
-class FilterOptions(CopyIndexOptions):
+#http://www.rubyrobot.org/article/duplicate-a-mysql-database
+#mysqladmin create DB_name -u DB_user --password=DB_pass mysqldump -u DB_user --password=DB_pass DB_name | mysql -u DB_user --password=DB_pass -h DB_host DB_name
+
+class FilterOptions(CommonCmnOptions):
 	def __init__(self):
 		super(FilterOptions,self).__init__()
-		self.filter = ''
+		self.filter = 'mpft'
 		self.level = 0.0
 		
+		self._appname = "Filter"
 		self._opts.append(('level','l',"NUMBER","some filters find duplicate files"
 			" by scanning them for acoustic similarity\n"
 			"that is important because the same track will look different to the computer\n"
@@ -39,18 +43,15 @@ class FilterOptions(CopyIndexOptions):
 		
 		self._opts.append(('filter','f',"FILTER","FILTER is a combination"
 			" of the following options:\n"
-			"s  remove all files that are not playable\n"
 			"m  merge all files with a duplicate md5 hash\n"
 			"f  merge all files with a duplicate fingerprint\n"
 			"   makes use of the level argument\n"
 			"p  merge all files with a duplicate puid\n"
 			"   makes use of the level argument\n"
-			"c  remove all file entries referencing non existant files\n"
-			"   as well as unused tags and hashes",
+			"t  merge all files with duplicate tags",
 			self.filter))
 				
-		self._appdesc=("Filter an index, and save the result in this one,\n"
-			"or in a new index.")
+		self._appdesc="Filter the index by merging similar songs."
 
 	def _set_option_value(self,opt,val):
 		q = None

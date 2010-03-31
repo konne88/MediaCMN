@@ -22,7 +22,7 @@ from subprocess import *
 from mutagen.mp3 import MP3,InvalidMPEGHeader,HeaderNotFoundError
 from mutagen.asf import ASF,ASFHeaderError
 
-from share.entries import Tag
+from share.entries import FileTag, TagGroup
 
 # mutagen
 # http://code.google.com/p/quodlibet/wiki/Mutagen
@@ -30,8 +30,6 @@ from share.entries import Tag
 
 def get_from_file(fullname,metaExt):
 	metaExt = metaExt.lower()
-	tags = []
-	
 	trans = []
 	meta = None
 	
@@ -96,14 +94,16 @@ def get_from_file(fullname,metaExt):
 	elif metaExt in (".flac",".oggflac",".spx",".oggtheora",".ogg"):
 		pass
 
+	taggroup = TagGroup(None,None)
+
 	for t in trans:
 		try:
 			d = unicode(meta[t][0])
-			tags.append( Tag(d,trans[t],u'metadata') )
+			taggroup.tags.append( FileTag(None,d,trans[t],'metadata',None) )
 		except KeyError:  # this tag doesn't exist in the file
 			pass
 	
-	return tags
+	return [taggroup]
 	
 if __name__ == "__main__":
 	s= [

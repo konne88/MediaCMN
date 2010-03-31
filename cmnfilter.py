@@ -22,77 +22,88 @@ import os
 
 import filter.index as index
 import filter.options as options
+from filter.merging import merge_files_by_flag_and_tags, 	\
+                           merge_files_by_md5, 			\
+                           merge_songs_by_properties,		\
+                           MergeFile
 
 def main(opts):
 	try:
-		print '----------------------------------------------'
-		db = None
-		if opts.targetIndex == None:
-			db = index.FilterIndex(opts.index,opts.user,opts.pw)
-		else:
-			db = index.FilterIndex(opts.targetIndex,opts.user,opts.pw)
-			if opts.drop:
-				print "Dropping target tables"
-				db.drop_tables()
-				print "----------------------------------------------"	
-			print "Copying files from index `"+opts.index+"` to target `"+opts.targetIndex+"`"
-			db.copy_tables_from_index(opts.index)
-			print "----------------------------------------------"
-	
-		if opts.filter.find('s') != -1:
-			print "Removing all files that are not playable"
-			db.filter_by_playable()
-			print "----------------------------------------------"
-		if opts.filter.find('m') != -1:
-			print "Removing all files with duplicate md5 hashes"
-			db.filter_by_md5()
-			print "----------------------------------------------"
-		if opts.filter.find('f') != -1:
-			print "Removing all files with duplicate fingerprints"
-			if opts.level > 0:
-				print "Except for files without tag similarity"
-			db.filter_by_fingerprint(opts.level)
-			print "----------------------------------------------"
-		if opts.filter.find('p') != -1:
-			print "Removing all files with duplicate puids"
-			if opts.level > 0:
-				print "Except for files without tag similarity"
-			db.filter_by_puid(opts.level)
-			print "----------------------------------------------"
-		if opts.filter.find('c') != -1:
-			print "Removing non existant file entries"
-			x = 0
-			files = db.get_all_file_index_connections()
-			for f in files:
-				fn = os.path.join(f.path,f.name+f.ext)
-				if not os.path.exists(fn):
-					print '\t',fn
-					db.remove_file(f.id)
-					x+=1
-			print x, "files removed"
-			print "----------------------------------------------"
-			print "Cleaning tags"
-			db.clean_tags()
-			print "----------------------------------------------"
-			print "Cleaning md5s"
-			db.clean_md5s()
-			print "----------------------------------------------"
-			print "Cleaning fingerprints"
-			db.clean_fingerprints()
-			print "----------------------------------------------"
-			print "Cleaning puids"
-			db.clean_puids()
-			print "----------------------------------------------"
+		opts.print_init()
+		db = index.FilterIndex(opts.index_reference)
+		# recreate all tables that have something to do with the filter,
+		# so we don't have all the old stuff in the way
+		db.drop_tables()
+		db.create_tables()
 
-		print "Filter done"
-		print "----------------------------------------------"
+		# a list of all the available mergefiles this is the main 
+		# variable since it keeps track of what has been merged
+		mfs = []
+		# list of all mergefiles with the flag being None. 
+		nullmfs = []
+
+		# figure out which flags we need to load from the index
+		flags = []
+		for k,v in (('m','md5id'),('p','puidid'),('f','fingerprintid')):
+			if opts.filter.find(k) != -1:
+				flags.append(v)
+
+		# get all music files from the index
+		fileids = db.get_music_file_ids_md5_ordered()
+		for fileid in fileids:
+			mf = MergeFile(db.get_file(fileid, flags))
+			mfs.append(mf)
+
+		# variable holding merges for each step so we can print that
+		count = 0
+		# Apply all the needed filters
+		for k,flag,f,t in (('m','md5id',merge_files_by_md5,"md5 hashes"),
+                            ('f', 'fingerprintid', lambda a : 
+				merge_files_by_flag_and_tags(a,opts.level,'fingerprintid'),
+				"fingerprints"),
+			    ('p', 'puidid', lambda a : 
+				merge_files_by_flag_and_tags(a,opts.level,'puidid'),
+				"puids")
+		):
+			if opts.filter.find(k) != -1:
+				# don't filter all entries with the flag being None
+				i=0
+				while i<len(mfs):
+					if mfs[i].flags[flag] == None:
+						nullmfs.append(mfs[i])
+						del mfs[i]
+					else:
+						i=i+1
+				# do the actual filtering
+				print "Merging files with duplicate %s."%t
+				count = len(mfs)
+				mfs = f(mfs)
+				print "%d succesful merges."%(count-len(mfs))
+				opts.print_sep()
+
+		# Merge with the leftout Files again
+		mfs.extend(nullmfs)
+
+		# Create songs and therefore also decide on one set of tags
+		songs = []		
+		for mf in mfs:
+			songs.append(mf.to_song())
 		
+		# Merge files that have the same set of tags
+		if opts.filter.find('t') != -1:
+			print "Merging files with duplicate tags."
+			count = len(songs)		
+			songs = merge_songs_by_properties(songs)
+			print "%d succesful merges."%(count-len(songs))
+			opts.print_sep()
+
+		# Write merged files into the database
+		for s in songs:
+			db.add_song(s)
+
+		opts.print_done()
 	except KeyboardInterrupt:
-		print
-		print
-		print "----------------------------------------------"
-		print "Filter terminated."
-		print "----------------------------------------------"
+		opts.print_terminated()
 
 if __name__ == "__main__":
 	opts = options.FilterOptions()

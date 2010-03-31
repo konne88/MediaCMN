@@ -1,4 +1,4 @@
-# MediaCMN - Tools to create a consistent music library.
+f# MediaCMN - Tools to create a consistent music library.
 # Copyright (C) 2009 Konstantin Weitz
 #
 # This program is free software; you can redistribute it and/or

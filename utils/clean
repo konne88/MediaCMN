@@ -1,0 +1,7 @@
+#/bin/sh
+
+# Removes all unnesesary files
+echo "Removing .pyc files"
+find . -name *.pyc -type f -print0 | xargs -0 /bin/rm -f	# .pyc files
+echo "Removing ~ files"
+find . -name ~* -type f -print0 | xargs -0 /bin/rm -f		# ~ files

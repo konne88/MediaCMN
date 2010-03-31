@@ -15,14 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-# description of what is valid
-# http://dev.mysql.com/doc/refman/5.0/en/identifiers.html
-def make_mysql_identifier(name):
-	if name!='' and name.find('/')==-1 and name.find('\\')==-1 and name.find('.')==-1 and len(name) <= 64:
-		return name.replace('`','``')
-	else:
-		return None
-
 def make_float_between_zero_and_one(v):
 	try:
 		l = float(v)

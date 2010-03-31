@@ -19,78 +19,80 @@ import os.path
 import os
 import shutil
 
-from entries import Tag
-from share.entries.tagcomp import find_best_tag_of_type
+from organizer.mp3file import transform_to_mp3, set_file_id3_tags
 
-def get_file_infos(tags,minRating):
-	# parse the tags
+def get_copyfile(files):
+	return files[0]
+
+def copy_file_to_target(filename,copyname,ismp3,song):
+	# create all the directories the file lies in	
+	path = os.path.dirname(filename)
+	pathParts = path.split('/')
+	usedParts = '/'
+	for p in pathParts:
+		usedParts = os.path.join(usedParts,p)
+		if not os.path.isdir(usedParts):
+			os.mkdir(usedParts)
+
+	# now actually copy the file
+	if ismp3:
+		shutil.copyfile(copyname,filename)
+	else:
+		transform_to_mp3(copyname,filename)
+
+	# and write id3 tags
+	set_file_id3_tags(filename,song)
+	
+def get_new_filename(song,target,pattern,strict):
+	#define what s.th. is named if it's empty
+	defaults = {
+		u'track':u"Unknown Track",
+		u'release':u"Unknown Release",
+		u'artist':u"Unknown Artist",
+		u'tracknumber':u"0",
+		u'date':u"Unknown Date",
+		u'genre':u"Unknown Genre"
+	}
+
+	# calc the infos about the song	
 	infos = {
 		u'track':None,
 		u'release':None,
 		u'artist':None,
 		u'tracknumber':None,
-		u'duration':None,
 		u'date':None,
 		u'genre':None
 	}
-	
-	# save the tag values into the infos dict
+
+	# fill the infos structure with information about the song
 	for k in infos:
-		tag = find_best_tag_of_type(tags,k,minRating)
-		if tag != None:
-			v = tag.value
-			if v == "":
-				v = None
-			infos[k] = v
-
-	return infos
-
-def get_new_relativename(target,name,infos,strict):
-	#define what s.th. is named if it's empty
-	defaults = {
-		u'track':u'Unknown Track',
-		u'release':u'Unknown Release',
-		u'artist':u'Unknown Artist',
-		u'duration':u'0',
-		u'tracknumber':u'0',
-		u'date':u'Unknown Date',
-		u'genre':u'Unknown Genre'
-	}
-
-	# replace info dict values with their defaults etc
-	# basically make them human readable and sortable
-	for k in infos:
-		# set defaults
+		infos[k] = getattr(song, k)
 		if infos[k] == None:
 			infos[k] = defaults[k]
-			
-		# remove the directory seperators, 
-		# so that names can't change directory structure
-		
-		infos[k] = infos[k].replace(u'/',u'-')
-		
-		# make tracknumber 2 digits
-		if k == u'tracknumber':
-			if len(infos[k]) == 1:
-				infos[k] = u"0"+infos[k]
-	
+		else:
+			# remove the directory seperators,
+			# so that names can't change directory structure
+			infos[k] = infos[k].replace(u'/',u'-')
+			# make tracknumber 2 digits
+			if k == u'tracknumber':
+				if len(infos[k]) == 1:
+					infos[k] = u"0"+infos[k]
+
 	# create the filename from the template string
 	reps = {
 		u't':infos[u'track'],
 		u'r':infos[u'release'],
 		u'a':infos[u'artist'],
 		u'n':infos[u'tracknumber'],
-		u'd':infos[u'duration'],
 		u'%':u'%'
 	}
 	
-	relativename = u""
+	relativename = u''
 	lastCharWasPercent = False
-	for c in name:
+	for c in pattern:
 		if c == '%':
 			lastCharWasPercent = True
-			continue
-			
+			continue		
 		if lastCharWasPercent == True:
 			try:
 				relativename += reps[c]
@@ -120,30 +122,15 @@ def get_new_relativename(target,name,infos,strict):
 			p = p[0:220]
 	relativename = '/'.join(pathParts)
 	
-	# check if file exists and if so ...
-	ext = ".mp3"
-	
-	# ... don't do anything, if duplicate files should be skiped
-		
-	# ... to use if duplicate files should be renamed
-	#x = 1
-	#while True:
-	#	if os.path.exists(os.path.join(target,relativename+ext)):
-	#		ext = " (exists "+unicode(x)+").mp3"
-	#		++x
-	#	else:
-	#		break
-	
-	return relativename+ext
-
-def create_nonexistant_dirs(target,relativename):
-	# create all the directories the file lies in	
-	path = os.path.dirname(relativename)
-	pathParts = path.split('/')
-	usedParts = target
-	for p in pathParts:
-		usedParts = os.path.join(usedParts,p)
-		
-		if not os.path.isdir(usedParts):
-			os.mkdir(usedParts)
-
+	# and finally append the extension and join with the target
+	# if files exists already append with a number
+	ext = '.mp3'
+	i = 1
+	fullname = os.path.join(target,relativename+ext)
+	while(True):
+		if os.path.exists(fullname):
+			fullname = os.path.join(target,relativename
+				+u" ("+unicode(i)+")"+ext)
+			i=i+1
+		else:
+			return fullname

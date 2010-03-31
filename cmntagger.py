@@ -20,54 +20,44 @@
 import sys
 import os
 
-from tagger.musicbrainz import get_matching_puid_tags
+from tagger.musicbrainz import get_puid_tags
 import tagger.index as index
-import tagger.options as options
+import share.options as options
 
 def main(opts):
 	try:
-		print "----------------------------------------------"
-
-		db = None
-		if opts.targetIndex == None:
-			db = index.TaggerIndex(opts.index,opts.user,opts.pw)
-		else:
-			db = index.TaggerIndex(opts.targetIndex,opts.user,opts.pw)
-			if opts.drop:
-				print "Dropping target tables"
-				db.drop_tables()
-				print "----------------------------------------------"	
-			print "Copying files from index `"+opts.index+"` to target `"+opts.targetIndex+"`"
-			db.copy_tables_from_index(opts.index)
-			print "----------------------------------------------"
+		opts.print_init()
+		db = index.TaggerIndex(opts.index_reference)
+		db.append_to_files_table()
 
 		print "Caching database entries"
-		fs = db.get_files_with_tags_and_puid()
-		newtagfiles = []
-		for f in fs:
-			print 'Searching tags on musicbrainz for file',f.id,'with puid',f.puid
-			print '\tOld Tags:',f.tags
-			fts = get_matching_puid_tags(f,opts.level)
-			print '\tNew Tags:',fts.tags
-			newtagfiles.append( fts )
-			print "----------------------------------------------"
-			
-		print "Writing new tags to index"		
-		db.update_all_tags(newtagfiles)
-		print "----------------------------------------------"
+		fileids = db.get_file_ids_if_puid_and_not_online()
 
-		print "Tagger done"
-		print "----------------------------------------------"
-		
+		for fileid in fileids:
+			online = False
+			file_ = db.get_file_without_tags(fileid,('puid',))
+			puid = file_.flags['puid']			
+			print "Searching tags on musicbrainz for file",fileid,'with puid',puid
+			taggroups = get_puid_tags(puid)
+			if taggroups != None:
+				online = True
+				print '\tTags:',taggroups
+				for taggroup in taggroups:					
+					taggroup.fileid = file_.id
+				db.add_tag_groups(taggroups)
+				print "Added new tags to index."
+			else:
+				print "Service not online."
+			db.set_file_musicbrainz_online(fileid,online)
+			opts.print_sep()
+			
+		opts.print_done()
 	except KeyboardInterrupt:
-		print
-		print
-		print "----------------------------------------------"
-		print "Tagger terminated."
-		print "----------------------------------------------"
+		opts.print_terminated()
 
 if __name__ == "__main__":
-	opts = options.TaggerOptions()
+	opts = options.CommonCmnOptions("MusicBrainz Tagger",
+		"Searches for music tags online using their puid.")
 	opts.parse_cmdline_arguments(sys.argv)
 	main(opts)
 	

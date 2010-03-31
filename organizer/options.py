@@ -22,11 +22,10 @@ import os.path
 class OrganizerOptions(IndexOptions):
 	def __init__(self):
 		super(OrganizerOptions,self).__init__()
-		self.newIndex = None
 		self.target = None
-		self.level = 0.3
 		self.filepattern = '%a/%r/%n-%t'
 		self.restrictions = 0
+		self._appname = "Organizer"
 		
 		self._opts.append(('filepattern','f',"PATTERN",
 			"the PATTERN defines which rules are applied in order to build\n"
@@ -42,22 +41,6 @@ class OrganizerOptions(IndexOptions):
 			"%%  is replaced by a '%' character\n"
 			"file extension (.mp3) is added automatically",
 			self.filepattern))
-					
-		self._opts.append(('level','l',"NUMBER",
-			"if a file is saved in the library only tags with a rating\n"
-			"highter then NUMBER will be stored with the file.\n"
-			"NUMBER is a value between 0 and 1. passing 0 all tags will be used.\n"
-			"the closer the value is to 1 the better the ratings need to be.",
-			self.level))
-			
-		self._opts.append(('new','n',"MYSQLDB",
-			"creates a new index with entries for all files\n"
-			"that were stored in the new library on the filesystem.\n"
-            "all files keep the id they had before, so by comparing the\n"
-            "indexes you can see which files were skipped.\n"
-            "use with -d to remove entries from the new index first\n"
-            "if this option is not passed, the old index will not be altered instead",
-            self.newIndex))
 
 		self._opts.append(('restrictions','r',"INTEGER",
 			"sets the restrictions that exist for valid filenames.\n"
@@ -91,21 +74,7 @@ class OrganizerOptions(IndexOptions):
 		
 	def _set_option_value(self,opt,val):
 		q = None
-		if opt == 'new':
-		  	v = check.make_mysql_identifier(val)
-		  	if v == None:
-		  		print "Passed mysql database name for the new index is invalid."
-		  		q = 1
-		  	else:
-		  		self.newIndex = v
-		elif opt == 'level':
-			v = check.make_float_between_zero_and_one(val)
-		  	if v == None:
-		  		print "The level argument is not a number between 0 and 1"
-		  		q = 1
-		  	else:
-			  	self.level = v
-		elif opt == 'restrictions':
+		if opt == 'restrictions':
 			v = check.make_positive_int(val)
 			if v == None:
 				print "Passed restriction param is not an integer."
@@ -121,11 +90,3 @@ class OrganizerOptions(IndexOptions):
 								
 		return q
 
-	def _all_options_loaded(self):
-		quit = super(OrganizerOptions,self)._all_options_loaded()
-		
-		if self.newIndex == None and self.drop == True:
-			print "Drop options can't be used without the new option."
-			quit=1
-			
-		return quit

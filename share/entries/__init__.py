@@ -15,28 +15,60 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-class Tag:
-	def __init__(self,value,type,source):
-		self.value = value.strip()
-		self.type = type
-		self.source = source
+import os
 
-	def __repr__(self):
-		return str((self.value,self.type,self.source))
-		
-class File:
-	def __init__(self,path,name,ext,size,online,md5id,fingerprintid,puidid):
+class IndexedFile(object):
+	def __init__(self,id,path,name,ext):
+		self.taggroups = []
+		self.id = id
 		self.path = path
 		self.name = name
 		self.ext = ext
-		self.size = size
-		self.online = online
-		self.md5id = md5id
-		self.fingerprintid =fingerprintid
-		self.puidid = puidid
-		
-class FileIdWithTags:
-	def __init__(self,id,ts):
+		self.flags = {}
+
+	@property
+    	def id(self):
+        	return self._id
+
+	@id.setter
+	def id(self, value):
+		self._id = value
+		for group in self.taggroups:
+			group.fileid = self._id
+
+	def get_fullname(self):
+		return os.path.join(self.path,self.name+self.ext)
+
+	def __repr__(self):
+		return self.get_fullname()
+
+class TagGroup(object):
+	def __init__(self,id,fileid):
+		self.tags = []
 		self.id = id
-		self.tags = ts
+		self.fileid = fileid
+		
+	@property
+    	def id(self):
+        	return self._id
+
+	@id.setter
+	def id(self, value):
+		self._id = value
+		for tag in self.tags:
+			tag.groupid = self._id
+
+	def __repr__(self):
+		return str(self.tags)
+
+class FileTag(object):
+	def __init__(self,id,value,type,source,groupid):
+		self.id = id
+		self.source = source
+		self.value = value.strip()
+		self.type = type
+		self.groupid = groupid
+
+	def __repr__(self):
+		return str((self.value,self.type))
 

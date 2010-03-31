@@ -20,8 +20,7 @@ import time
 
 from musicbrainz2.webservice import Query, TrackFilter, WebServiceError
 
-from entries import Tag, FileIdWithTags
-from share.entries.tagcomp import tag_similarity
+from share.entries import FileTag, TagGroup
 
 # how to use musicbrainz2
 # http://musicbrainz.org/doc/PythonMusicBrainz2
@@ -30,15 +29,10 @@ from share.entries.tagcomp import tag_similarity
 # http://wiki.musicbrainz.org/XMLWebService#Limiting_Connections_to_the_MusicBrainz_Web_Service
 _lastServerCall = 0
 
-def _get_puid_tags(puid):
-	""" 
-	this actually returns a list of all songs,
-	with the passed puid, and the tags to each of tis songs
-	it's a list in a list
-	"""
+def get_puid_tags(puid):
+	"""Returns a list of `TagGroup` elements, matching the song's puid"""
 	
 	global _lastServerCall
-	
 	# wait at least a second
 	while True:
 		currentTime = time.time()
@@ -48,15 +42,13 @@ def _get_puid_tags(puid):
 		time.sleep(0.05)
 
 	q = Query()
-
 	res = []
-
 	try:
 		f = TrackFilter(puid=puid)
 		results = q.getTracks(f)
 	except WebServiceError, e:
 		print e
-		return res
+		return None
 		
 	for result in results:
 		track = result.track
@@ -66,40 +58,13 @@ def _get_puid_tags(puid):
 		# to the result. this way we don't choose the wrong one		
 		rels = track.releases
 		for release in rels:
-			ts = []
-			ts.append( Tag(track.title,"track","musicbrainz") )
-			ts.append( Tag(artist.name,"artist","musicbrainz") )
-			ts.append( Tag(unicode(track.duration),"duration","musicbrainz") )
-			ts.append( Tag(release.title,"release","musicbrainz") )
-			ts.append( Tag(unicode(release.tracksOffset),"tracknumber","musicbrainz") )
-			
-			res.append(ts)
+			tg = TagGroup(None,None)
+			tg.tags.append( FileTag(None,track.title,'track','musicbrainz',None) )
+			tg.tags.append( FileTag(None,artist.name,'artist','musicbrainz',None) )
+			tg.tags.append( FileTag(None,unicode(track.duration),'duration','musicbrainz',None) )
+			tg.tags.append( FileTag(None,release.title,'release','musicbrainz',None) )
+			tg.tags.append( FileTag(None,unicode(release.tracksOffset),'tracknumber','musicbrainz',None) )
+			res.append(tg)
 
 	return res
-
-
-def get_matching_puid_tags(f,matchLevel):
-	fts = f.tags
-	if f.puid != None:
-		ptss = _get_puid_tags(f.puid)
-		bestSim = 0                 # best similarity
-		bestTags = []
-		for pts in ptss:
-			sim = tag_similarity(fts,pts)
-			if sim >= bestSim:
-				bestTags = pts
-				bestSim = sim
-				
-		if bestSim >= matchLevel:
-			if bestTags != []:
-				# at this point we got the best matching tags
-				return FileIdWithTags(f.id,bestTags)
-		
-		print '\tNo appropriate tags found for track on musicbrainz'
-	else:
-		print '\tNo puid exists for file'
-
-	# at this point we couldn't find any tags for the file
-	# we just leave the old tags
-	return FileIdWithTags(f.id,fts)
 
